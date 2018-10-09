@@ -60,21 +60,11 @@ class Idavoll_Admin {
 	 * @since    1.0.0
 	 */
 	public function enqueue_styles() {
-
-		/**
-		 * This function is provided for demonstration purposes only.
-		 *
-		 * An instance of this class should be passed to the run() function
-		 * defined in Idavoll_Loader as all of the hooks are defined
-		 * in that particular class.
-		 *
-		 * The Idavoll_Loader will then create the relationship
-		 * between the defined hooks and the functions defined in this
-		 * class.
-		 */
-
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/idavoll-admin.css', array(), $this->version, 'all' );
-
+		if ( 'settings_page_idavoll' == get_current_screen() -> id ) {
+             // CSS stylesheet for colour Picker
+             wp_enqueue_style( 'wp-color-picker' );            
+             wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/idavoll-admin.css', array( 'wp-color-picker' ), $this->version, 'all' );
+         }
 	}
 
 	/**
@@ -83,21 +73,82 @@ class Idavoll_Admin {
 	 * @since    1.0.0
 	 */
 	public function enqueue_scripts() {
+		if ( 'settings_page_idavoll' == get_current_screen() -> id ) {
+            wp_enqueue_media();   
+            wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/idavoll-admin.js', array( 'jquery', 'wp-color-picker' ), $this->version, false );         
+        }
+	}
 
-		/**
-		 * This function is provided for demonstration purposes only.
-		 *
-		 * An instance of this class should be passed to the run() function
-		 * defined in Idavoll_Loader as all of the hooks are defined
-		 * in that particular class.
-		 *
-		 * The Idavoll_Loader will then create the relationship
-		 * between the defined hooks and the functions defined in this
-		 * class.
-		 */
+	/**
+ 	* Register the administration menu for this plugin into the WordPress Dashboard menu.
+ 	*
+ 	* @since    1.0.0
+ 	*/ 
+	public function add_plugin_admin_menu() {
 
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/idavoll-admin.js', array( 'jquery' ), $this->version, false );
+	    /*
+	     * Add a settings page for this plugin to the Settings menu.
+	     *
+	     * NOTE:  Alternative menu locations are available via WordPress administration menu functions.
+	     *
+	     *        Administration Menus: http://codex.wordpress.org/Administration_Menus
+	     *
+	     */
+	    add_options_page( 'Idavoll Booking Setup', 'Idavoll Booking Setup', 'manage_options', $this->plugin_name, array($this, 'display_plugin_setup_page')
+	    );
+	}
+
+	 /**
+	 * Add settings action link to the plugins page.
+	 *
+	 * @since    1.0.0
+	 */
+	public function add_action_links( $links ) {
+	    /*
+	    *  Documentation : https://codex.wordpress.org/Plugin_API/Filter_Reference/plugin_action_links_(plugin_file_name)
+	    */
+	   $settings_link = array(
+	    '<a href="' . admin_url( 'options-general.php?page=' . $this->plugin_name ) . '">' . __('Settings', $this->plugin_name) . '</a>',
+	   );
+	   return array_merge(  $settings_link, $links );
 
 	}
 
+	/**
+	 * Render the settings page for this plugin.
+	 *
+	 * @since    1.0.0
+	 */
+	public function display_plugin_setup_page() {
+	    include_once( 'partials/idavoll-admin-display.php' );
+	}
+
+	public function options_update() {
+		register_setting($this->plugin_name, $this->plugin_name, array($this, 'validate'));
+	}
+
+	public function validate($input) {
+		// All inputs        
+		$valid = array();
+
+		//Cleanup the inputs
+		$valid['deposit'] = (!isset($input['deposit']) || empty($input['deposit'])) ? 50.0 : floatval($input['deposit']);
+		$valid['cancellationfee'] = (!isset($input['cancellationfee']) || empty($input['cancellationfee'])) ? 50.0 : floatval($input['cancellationfee']);
+		$valid['cancellationdays'] = (!isset($input['cancellationdays']) || empty($input['cancellationdays'])) ? 14 : intval($input['cancellationdays']);
+
+		//First colour Picker
+        $valid['background_colour'] = (isset($input['background_colour']) && !empty($input['background_colour'])) ? sanitize_text_field($input['background_colour']) : '';
+
+        if ( !empty($valid['background_colour']) && !preg_match( '/^#[a-f0-9]{6}$/i', $valid['background_colour']  ) ) { 
+        	// if user insert a HEX colour with #
+            add_settings_error(
+                'background_colour',                     // Setting title
+                'background_colour_texterror',            // Error ID
+                'Please enter a valid hex value colour',     // Error message
+                'error'                         // Type of message
+            );
+        }
+
+		return $valid;
+	}
 }

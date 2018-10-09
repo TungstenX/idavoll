@@ -40,6 +40,7 @@ class Idavoll_Public {
 	 */
 	private $version;
 
+	private $idavoll_options;
 	/**
 	 * Initialize the class and set its properties.
 	 *
@@ -51,7 +52,7 @@ class Idavoll_Public {
 
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
-
+		$this->idavoll_options = get_option($this->plugin_name);
 	}
 
 	/**
@@ -96,8 +97,21 @@ class Idavoll_Public {
 		 * class.
 		 */
 
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/idavoll-public.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script($this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/idavoll-public.js', array('jquery'), $this->version, false);
 
 	}
+
+	/**
+	* Change the plugin's background colour. And other
+	*/
+    public function idavoll_styles() {
+    	$bg_colour = $this->idavoll_options['background_colour'];
+        if(!empty($bg_colour) 
+        	&& preg_match('/^#[a-f0-9]{6}$/i', $bg_colour)) {
+            global $wp_widget_factory;
+            $background_colour_css  = ".booking_container{ background:" . $bg_colour . "!important;}";
+         	echo "<style>$background_colour_css</style>";
+        }
+    }
 
 }
