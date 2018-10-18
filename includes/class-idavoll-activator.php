@@ -30,7 +30,8 @@ class Idavoll_Activator {
 	 * @since    1.0.0
 	 */
 	public static function activate() {
-
+		require_once plugin_dir_path( __FILE__ ) . 'class-idavoll-db-func.php';
+		$db_func = new Idavoll_DB_Func();
+		$db_func->db_install();
 	}
-
 }

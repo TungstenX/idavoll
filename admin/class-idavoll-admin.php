@@ -40,6 +40,7 @@ class Idavoll_Admin {
 	 */
 	private $version;
 
+
 	/**
 	 * Initialize the class and set its properties.
 	 *
@@ -51,7 +52,6 @@ class Idavoll_Admin {
 
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
-
 	}
 
 	/**
@@ -150,5 +150,35 @@ class Idavoll_Admin {
         }
 
 		return $valid;
+	}
+
+	public function cap_in_admin_action() {
+    	// Do your stuff here
+    	$_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+    	$idavol_input  = $_POST['idavoll-capacity'];
+    	$is_main_capacity = $idavol_input['main_capacity'] == 'on' ? true : false;
+		$capacity_type = $idavol_input['capacity_type'];
+		$max = $idavol_input['capacity_max'];
+		$price_factor = $idavol_input['capacity_factor'];
+		require_once plugin_dir_path( __FILE__ ) . '../includes/class-idavoll-db-func.php';
+    	$db_func = new Idavoll_DB_Func();
+    	$db_func->storeCapacityItem($is_main_capacity, $capacity_type, $max, $price_factor);
+    	// error_log("wpse10501_admin_action: " . print_r($_POST, 1) , 0);
+    	wp_redirect( $_SERVER['HTTP_REFERER'] );
+    	exit();
+	}
+
+	public function price_plan_in_admin_action() {
+    	// Do your stuff here
+    	$_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+    	$idavol_input  = $_POST['idavoll-price-plan'];
+    	$price_type = $idavol_input['price_type'];
+		$base_amount = $idavol_input['base_amount'];
+		$single_factor = $idavol_input['single_factor'];
+		require_once plugin_dir_path( __FILE__ ) . '../includes/class-idavoll-db-func.php';
+    	$db_func = new Idavoll_DB_Func();
+    	$db_func->storePricePlan($base_amount, $single_factor, $price_type);
+    	wp_redirect( $_SERVER['HTTP_REFERER'] );
+    	exit();
 	}
 }

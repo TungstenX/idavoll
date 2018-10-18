@@ -166,7 +166,9 @@ class Idavoll {
 		
 		// Save/Update our plugin options
 		$this->loader->add_action('admin_init', $plugin_admin, 'options_update');
-        $this->loader->add_action('widgets_init', 'idavoll_booking_load_widget');
+        add_action('widgets_init', 'idavoll_booking_load_widget');
+        $this->loader->add_action( 'admin_action_cap_in', $plugin_admin, 'cap_in_admin_action' );
+        $this->loader->add_action( 'admin_action_price_plan_in', $plugin_admin, 'price_plan_in_admin_action' );
 	}
 
 	/**
@@ -185,7 +187,7 @@ class Idavoll {
 		//Actions
         // $this->loader->add_action( 'init', $plugin_public, 'wp_cbf_cleanup' );
         $this->loader->add_action('wp_loaded', $plugin_public, 'idavoll_styles' );
-        $this->loader->add_action('widgets_init', 'idavoll_booking_load_widget');
+        add_action('widgets_init', 'idavoll_booking_load_widget');
         // $this->loader->add_action( 'wp_loaded', $plugin_public, 'wp_cbf_remove_gallery_styles' );
         // $this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'wp_cbf_cdn_jquery', PHP_INT_MAX);
 

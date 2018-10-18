@@ -114,4 +114,8 @@ class Idavoll_Public {
         }
     }
 
+    public function idavoll_booking_load_widget() {
+		// register_widget( 'idavoll_booking_widget' );
+	}
+
 }
