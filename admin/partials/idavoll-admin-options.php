@@ -10,7 +10,7 @@
     $cancellationdays = $options['cancellationdays'];
     $background_colour = $options['background_colour'];
     settings_fields($this->plugin_name);
-    do_settings_sections($this->plugin_name);
+    do_settings_sections($this->plugin_name);    
 	?>
 	<table>
 		<tr>    			

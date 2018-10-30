@@ -8,6 +8,7 @@
 		$selected_max = "";
 		$selected_price_factor = 1.0;
 	?>
+	<p>Description blah</p>
 	<h3 class="nav-tab-wrapper"><?php _e('New / Edit', $this->plugin_name); ?></h3>
 	<form method="post" name="booking_capacity" action="<?php echo admin_url( 'admin.php' ); ?>">
 		<input type="hidden" name="action" value="cap_in" />
@@ -58,7 +59,7 @@
 			        <fieldset>
 			            <legend class="screen-reader-text"><span><?php _e('Maximum: ', $this->plugin_name); ?></span></legend>
 			            <label for="<?php echo $this->plugin_name; ?>-capacity-factor">			                
-			                <input type="number" step="0.10" value='<?php if(!empty($selected_price_factor)) {echo $selected_price_factor;} ?>' placeholder='1.0'  id="<?php echo $this->plugin_name; ?>-capacity-factor" name="<?php echo $this->plugin_name; ?>-capacity[capacity_factor]" />
+			                <input type="number" step="0.01" value='<?php if(!empty($selected_price_factor)) {echo factorToPercentage($selected_price_factor);} ?>' placeholder='100.00'  id="<?php echo $this->plugin_name; ?>-capacity-factor" name="<?php echo $this->plugin_name; ?>-capacity[capacity_factor]" /> %
 			            </label>
 			        </fieldset>
 			    </td>
@@ -93,7 +94,7 @@
 			<td><?php echo $row->capacity_type; ?></td>
 			<td><?php echo $row->main_capacity; ?></td>
 			<td><?php echo $row->max; ?></td>
-			<td><?php echo $row->price_factor; ?></td>
+			<td><?php echo factorToPercentage($row->price_factor); ?> %</td>
 			<td><button><?php echo $row->id; ?></button></td>
 		</tr>
 		<?php

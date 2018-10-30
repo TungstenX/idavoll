@@ -11,6 +11,10 @@
  * @package    Idavoll
  * @subpackage Idavoll/admin/partials
  */
+
+    function factorToPercentage($factor) {
+    	return number_format((float)$factor * 100.00, 2);
+    }
 ?>
 
 <!-- This file should primarily consist of HTML with a little bit of PHP. -->
@@ -24,7 +28,8 @@
 	    $tabs = array(
 	        'options'   => __('Options', 'idavoll'), 
 	        'capacity'  => __('Capacity', 'idavoll'), 
-	        'priceplan'  => __('Price Plans', 'idavoll')
+	        'priceplan'  => __('Price Plans', 'idavoll'), 
+	        'room'  => __('Rooms', 'idavoll')
 	    );
 	    $html = '<h2 class="nav-tab-wrapper">';
 	    foreach( $tabs as $tab => $name ){
@@ -47,6 +52,9 @@
 	} else if ($tab == 'priceplan') {
 		// Capacity
 	    require_once plugin_dir_path( __FILE__ ) . 'idavoll-admin-price-plan.php';
+	} else if ($tab == 'room') {
+		// Capacity
+	    require_once plugin_dir_path( __FILE__ ) . 'idavoll-admin-room.php';
 	}
     ?>
     

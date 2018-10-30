@@ -22,7 +22,7 @@
  */
 class Idavoll_DB_Func {
 
-	private static $ihs_db_version = "1.0";
+	private static $ihs_db_version = "1.0.5";
 
 	public function db_install () {
 		global $wpdb;
@@ -52,20 +52,14 @@ class Idavoll_DB_Func {
 		$table_name_booking = $wpdb->prefix . "ihs_booking"; 
 		$sql = "CREATE TABLE " . $table_name_booking . " (
   			id mediumint(9) NOT NULL AUTO_INCREMENT,
+  			id_admin_user bigint(20),
   			start_date date DEFAULT '0000-00-00' NOT NULL,
   			end_date date,
+  			base_amount double,
+  			contact_name varchar(255),
+  			contact_telephone varchar(15),
+  			contact_email varchar(60),
   			PRIMARY KEY  (id)
-		) " . $charset_collate . ";";
-		$this->doTheSql($sql);
-
-		//Booking room / capacity max pivot table		
-		$table_name_booking_rooms_ppr = $wpdb->prefix . "ihs_booking_rooms_ppr"; 
-		$sql = "CREATE TABLE " . $table_name_booking_rooms_ppr . " (
-   			id mediumint(9) NOT NULL AUTO_INCREMENT,
-   			id_booking mediumint(9),
-   			id_room mediumint(9),
-   			id_capacity mediumint(9),
-   			PRIMARY KEY  (id)
 		) " . $charset_collate . ";";
 		$this->doTheSql($sql);
 	}
@@ -92,7 +86,12 @@ class Idavoll_DB_Func {
 	/**
 	* Version 1.0
 	* ihs_price_plan
-	*	- 
+	*	- Done: Insert, Select
+	*	- TODO: Update
+	* ihs_price_plan_item
+	*	- Done: Insert, Select
+	*	- TODO: Update
+	* 
 	*/
 	private function makePriceTables($charset_collate) {
 		global $wpdb;
@@ -103,8 +102,11 @@ class Idavoll_DB_Func {
    			start_date date,
   			end_date date,
    			times int(3),
-   			id_capacity_item mediumint(9),
-   			id_room mediumint(9),
+   			id_booking mediumint(9),
+   			room_capacity_type varchar(25),
+   			price_factor double,
+   			number_of_ppl int(3),
+   			room_name varchar(255),
    			PRIMARY KEY  (id)
 		) " . $charset_collate . ";";
 		$this->doTheSql($sql);
@@ -122,6 +124,7 @@ class Idavoll_DB_Func {
 		$table_name_price_plan_item = $wpdb->prefix . "ihs_price_plan_item"; 
 		$sql = "CREATE TABLE " . $table_name_price_plan_item . " (
    			id mediumint(9) NOT NULL AUTO_INCREMENT,
+   			item_name varchar(20),
    			factor double,
    			day_of_week int(1) DEFAULT -1,
    			start_date date,
@@ -129,7 +132,7 @@ class Idavoll_DB_Func {
    			PRIMARY KEY  (id)
 		) " . $charset_collate . ";";
 		$this->doTheSql($sql);		
-
+		//Not sure about this?
 		$table_name_price_plan_plan_item = $wpdb->prefix . "ihs_price_plan_plan_item"; 
 		$sql = "CREATE TABLE " . $table_name_price_plan_plan_item . " (
    			id mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -142,6 +145,9 @@ class Idavoll_DB_Func {
 
 	/**
 	* Version 1.0
+	* ihs_room
+	*	- Done: Insert, Select
+	*	- TODO: Update
 	*/
 	private function makeRoomTables($charset_collate) {
 		global $wpdb;
@@ -157,29 +163,29 @@ class Idavoll_DB_Func {
 		) " . $charset_collate . ";";
 		$this->doTheSql($sql);		
 
-		$table_name_room_capacity = $wpdb->prefix . "ihs_room_capacity"; 
-		$sql = "CREATE TABLE " . $table_name_room_capacity . " (
-   			id mediumint(9) NOT NULL AUTO_INCREMENT,
-   			id_capacity_item_main mediumint(9),
-   			PRIMARY KEY  (id)
-		) " . $charset_collate . ";";
-		$this->doTheSql($sql);		
+		// $table_name_room_capacity = $wpdb->prefix . "ihs_room_capacity"; 
+		// $sql = "CREATE TABLE " . $table_name_room_capacity . " (
+  //  			id mediumint(9) NOT NULL AUTO_INCREMENT,
+  //  			id_capacity_item_main mediumint(9),
+  //  			PRIMARY KEY  (id)
+		// ) " . $charset_collate . ";";
+		// $this->doTheSql($sql);		
 
 		$table_name_room_capacity_additional = $wpdb->prefix . "ihs_room_capacity_additional"; 
 		$sql = "CREATE TABLE " . $table_name_room_capacity_additional . " (
    			id mediumint(9) NOT NULL AUTO_INCREMENT,
    			cap_order int(1),
-   			id_room_capacity mediumint(9),
+   			id_room_type mediumint(9),
    			id_capacity_item mediumint(9),
    			PRIMARY KEY  (id)
 		) " . $charset_collate . ";";
 		$this->doTheSql($sql);		
 
 		$table_name_room_type = $wpdb->prefix . "ihs_room_type"; 
-		$sql = "CREATE TABLE " . $table_name_room_capacity_additional . " (
+		$sql = "CREATE TABLE " . $table_name_room_type . " (
    			id mediumint(9) NOT NULL AUTO_INCREMENT,
    			type_name varchar(255),
-   			id_room_capacity mediumint(9),
+   			id_room_capacity_item mediumint(9),
    			PRIMARY KEY  (id)
 		) " . $charset_collate . ";";
 		$this->doTheSql($sql);		
@@ -188,7 +194,7 @@ class Idavoll_DB_Func {
 	public function getAllCapacityItems() {
 		global $wpdb;
 		$table_name_capacity = $wpdb->prefix . "ihs_capacity_item"; 
-		$rows = $wpdb->get_results( "SELECT id, main_capacity, capacity_type, max, price_factor FROM " . $table_name_capacity);
+		$rows = $wpdb->get_results( "SELECT id, main_capacity, capacity_type, max, price_factor FROM " . $table_name_capacity . " ORDER BY main_capacity");
 		return $rows;
 	}
 
@@ -230,6 +236,447 @@ class Idavoll_DB_Func {
 				'%f',
 				'%d')
 		);
+		$lastid = $wpdb->insert_id;
+		return $lastid;
+	}
+
+	public function getAllPricePlanItems() {
+		global $wpdb;
+		$table_name_price_plan_item = $wpdb->prefix . "ihs_price_plan_item";
+		$rows = $wpdb->get_results( "SELECT id, item_name, factor, day_of_week, start_date, end_date FROM " . $table_name_price_plan_item);
 		return $rows;
 	}
+
+	public function storePricePlanItem($item_name, $factor, $day_of_week, $start_date, $end_date) {
+		global $wpdb;
+		$table_name_price_plan_item = $wpdb->prefix . "ihs_price_plan_item";
+		$rows = $wpdb->insert( $table_name_price_plan_item, 
+			array(
+				'item_name' => $item_name, 
+				'factor' => $factor, 
+				'day_of_week' => $day_of_week,
+				'start_date' => date('Y-m-d', strtotime($start_date)),
+				'end_date' => date('Y-m-d', strtotime($end_date)))
+		);
+		return $rows;
+	}
+
+	public function storePricePlanPlanItem($id_price_plan, $id_price_plan_items) {
+		global $wpdb;
+		$table_name_price_plan_plan_item = $wpdb->prefix . "ihs_price_plan_plan_item"; 
+		foreach ($id_price_plan_items as $key => $value) {
+			$rows = $wpdb->insert($table_name_price_plan_plan_item, 
+				array(
+					'id_price_plan' => $id_price_plan, 
+					'id_price_plan_item' => $value),
+				array(
+					'%d',
+					'%d'
+				));	
+		}
+	}
+
+	public function getRoom($id) {
+		global $wpdb;
+		$table_name_room = $wpdb->prefix . "ihs_room";
+		$row = $wpdb->get_row( "SELECT id, room_name, room_description, id_room_type, id_room_composite, id_price_plan FROM " . $table_name_room . " WHERE id=$id");
+		return $row;
+	}
+
+	public function getAllRooms() {
+		global $wpdb;
+		$table_name_room = $wpdb->prefix . "ihs_room";
+		$rows = $wpdb->get_results( "SELECT id, room_name, room_description, id_room_type, id_room_composite, id_price_plan FROM " . $table_name_room);
+		return $rows;
+	}
+
+	public function storeRoom($room_name, $room_description, $id_room_type, $id_room_composite, $id_price_plan) {
+		global $wpdb;
+		$table_name_room = $wpdb->prefix . "ihs_room";
+		$rows = $wpdb->insert( $table_name_room, 
+			array(
+				'room_name' => $room_name, 
+				'room_description' => $room_description,
+				'id_room_type' => $id_room_type,
+				'id_room_composite' => $id_room_composite,
+				'id_price_plan' => $id_price_plan),
+			array(
+				'%s',
+				'%s', 
+				'%d',
+				'%d',
+				'%d')
+		);
+		
+		$lastid = $wpdb->insert_id;
+		return $lastid;
+	}
+
+	public function getPricePlanItems($price_plan_id) {		
+		global $wpdb;
+		$table_name_price_plan_plan_item = $wpdb->prefix . "ihs_price_plan_plan_item"; 
+		$table_name_price_plan_item = $wpdb->prefix . "ihs_price_plan_item"; 
+		$sql = "SELECT ppi.id as id, ppi.item_name as item_name, ppi.factor as factor, ppi.day_of_week as day_of_week, ppi.start_date as start_date, ppi.end_date as end_date FROM " . $table_name_price_plan_item . " ppi INNER JOIN  " . $table_name_price_plan_plan_item . " pi ON ppi.id = pi.id_price_plan_item WHERE pi.id_price_plan = " . $price_plan_id . " ORDER BY ppi.start_date, ppi.day_of_week";	
+		$rows = $wpdb->get_results($sql);
+		return $rows;	
+	}
+
+	public function getAllRoomTypes() {
+		global $wpdb;
+		$table_name_room_type = $wpdb->prefix . "ihs_room_type";
+		$rows = $wpdb->get_results( "SELECT id, type_name, id_room_capacity_item FROM " . $table_name_room_type);
+		return $rows;
+	}
+
+	public function storeRoomType($type_name, $id_room_capacity_item) {
+		global $wpdb;
+		$table_name_room_type = $wpdb->prefix . "ihs_room_type";
+		$rows = $wpdb->insert( $table_name_room_type, 
+			array(
+				'type_name' => $type_name, 
+				'id_room_capacity_item' => $id_room_capacity_item),
+			array(
+				'%s', 
+				'%d')
+		);
+		$lastid = $wpdb->insert_id;
+		return $lastid;
+	}
+
+	public function storeCapacityAdditional($id_room_type, $add_caps) {
+		global $wpdb;
+		$table_name_room_capacity_additional = $wpdb->prefix . "ihs_room_capacity_additional"; 
+		$counter = 0;
+		foreach ($add_caps as $key => $value) {
+			$rows = $wpdb->insert($table_name_room_capacity_additional, 
+				array(
+					'cap_order' => $counter,
+					'id_room_type' => $id_room_type, 
+					'id_capacity_item' => $value),
+				array(
+					'%d',
+					'%d',
+					'%d'
+				));	
+			$counter++;
+		}
+	}
+
+	public function getCapacityItem($id) {
+		global $wpdb;
+		$table_name_capacity = $wpdb->prefix . "ihs_capacity_item"; 
+		$row = $wpdb->get_row( "SELECT id, main_capacity, capacity_type, max, price_factor FROM " . $table_name_capacity . " WHERE id = $id");
+		return $row;
+	}
+
+	public function getCapacityItemByRoomTypes($id_room_type) {
+		global $wpdb;
+		$table_name_room_capacity_additional = $wpdb->prefix . "ihs_room_capacity_additional";
+		$table_name_capacity = $wpdb->prefix . "ihs_capacity_item"; 
+		$rows = $wpdb->get_results("SELECT c.id AS id, c.main_capacity AS main_capacity, c.capacity_type AS capacity_type, c.max AS max, c.price_factor AS price_factor FROM " .$table_name_room_capacity_additional . " ca INNER JOIN " . $table_name_capacity . " c ON c.id = ca.id_capacity_item WHERE ca.id_room_type = " . $id_room_type . " ORDER BY ca.cap_order");
+		return $rows;	
+	}
+
+	public function getRoomType($id) {
+		global $wpdb;
+		$table_name_room_type = $wpdb->prefix . "ihs_room_type";
+		$row = $wpdb->get_row( "SELECT id, type_name, id_room_capacity_item FROM " . $table_name_room_type . " WHERE id=$id");
+		return $row;
+	}
+
+	public function getPricePlan($id) {
+		global $wpdb;
+		$table_name_price_plan = $wpdb->prefix . "ihs_price_plan";
+		$row = $wpdb->get_row( "SELECT id, base_amount, single_factor, price_type FROM " . $table_name_price_plan . " WHERE id=$id");
+		return $row;
+	}
+
+	public function storeBook($id_room, $id_main_capacity, $main_capacity_number, $add_cap_ids, $add_cap_number, $from, $to, $contact_name, $contact_telephone, $contact_email, $deposit) {
+		global $wpdb;
+		$user_id = get_current_user_id();		
+		$room = $this->getRoom($id_room);
+		$price_plan = $this->getPricePlan($room->id_price_plan);
+		$table_name_booking = $wpdb->prefix . "ihs_booking";
+		$rows = $wpdb->insert( $table_name_booking, 
+			array(
+				'id_admin_user' => $user_id, 
+				'start_date' => date('Y-m-d', strtotime($from)), 
+				'end_date' => date('Y-m-d', strtotime($to)),
+				'base_amount' => $price_plan->base_amount,
+				'contact_name' => $contact_name,
+				'contact_telephone' => $contact_telephone,
+				'contact_email' => $contact_email)
+		);
+		$lastid = $wpdb->insert_id;		
+   		$main_cap = $this->getCapacityItem($id_main_capacity);	
+
+   		$caps = array(
+			array(
+	   			'room_capacity_type' => $main_cap->capacity_type,
+				'price_factor' => $main_cap->price_factor,
+				'max' => $main_capacity_number
+			)
+		);
+		$room_caps = array(
+			'main_capacity' => array(
+				'room_capacity_type' => $main_cap->capacity_type,
+				'price_factor' => $main_cap->price_factor,
+				'max' => $main_cap->max
+			),
+			'additional_capacity' => array()
+		);
+
+		foreach ($add_cap_ids as $key => $value) {
+			$add_cap = $this->getCapacityItem($value);	
+			$cap_add = array(
+	   			'room_capacity_type' => $add_cap->capacity_type,
+				'price_factor' => $add_cap->price_factor,
+				'max' => $add_cap_number[$key]
+			)
+			$room_cap_add = array(
+	   			'room_capacity_type' => $add_cap->capacity_type,
+				'price_factor' => $add_cap->price_factor,
+				'max' => $add_cap->max
+			)
+			array_push($caps, $cap_add);
+			array_push($room_caps['additional_capacity'], $room_cap_add);
+		}
+
+		$price_plan_items = $this->getPricePlanItems($price_plan->id);
+		$price_plan_item_array = array();
+		foreach ($price_plan_items as $key => $value) {
+			$item = array(
+				'day_of_week' => $value->day_of_week,
+				'start_date' => $value->start_date . ' 00:00:00',
+				'end_date' => $value->end_date . ' 23:59:59',
+				'factor' => $value->factor
+			);
+			array_push($price_plan_item_array, $item);
+		}
+
+   		$booking = array(
+   			'start_date' => $from . ' 00:00:00', 
+   			'end_date' => $to . ' 23:59:59', 
+   			'number_of_ppl_per_room' => array(
+   				$room->room_name => $caps
+   			),
+   			'rooms' => array(
+   				array(
+   					'room_name' => $room->room_name, 
+   					'price_plan' => array(
+   						'base_amount' => $price_plan->base_amount,
+   						'price_plan_items' => $price_plan_item_array,
+   						'price_type' => $price_plan->price_type
+   					),
+   					'room_type' => array(
+   						'room_capacity' => $room_caps
+   					)
+   				)
+   			)
+   		);
+
+   		require_once plugin_dir_path( __FILE__ ) . 'class-idavoll-price-model.php';
+   		$price_model = new Idavoll_Price_Model();
+   		$price_items = $price_model->makePriceItems($booking);   		
+   			
+		$table_name_price_item = $wpdb->prefix . "ihs_price_item"; 
+   		foreach ($price_items as $key => $value) {
+   			$rows = $wpdb->insert( $table_name_price_item, 
+   				array(
+   					'amount' => $value->amount, 
+   					'start_date' => date('Y-m-d', $value->start_date), 
+   					'end_date' => date('Y-m-d', $value->end_date),
+   					'times' => $value->times,
+   					'id_booking' => $lastid,
+   					'room_capacity_type' => $value->capacity_item->room_capacity_type,
+   					'price_factor' => $value->capacity_item->price_factor,
+   					'number_of_ppl' => $value->capacity_item->max,
+   					'room_name' => $value->room->room_name
+   				)
+   			);
+   		}
+
+		return $lastid;
+	}
 }
+/* Input
+
+$booking = array(
+		'start_date' => '2018-10-30 00:00:00', 
+		'end_date' => '2018-11-01 23:59:59', 
+		'number_of_ppl_per_room' => array(
+			'102' => array(
+				array(
+					'room_capacity_type' => 'Adults',
+					'price_factor' => 1.0,
+					'max' => 2
+				),
+				array(
+					'room_capacity_type' => 'Kids under 13',
+					'price_factor' => 0.75,
+					'max' => 2
+				) 
+			)
+		),
+		'rooms' => array(
+			array(
+				'room_name' => '102', 
+				'price_plan' => array(
+					'base_amount' => 999.99,
+					'price_plan_items' => array(
+						array(
+							'day_of_week' => -1,
+							'start_date' => '2018-12-13 00:00:00',
+							'end_date' => '2019-01-13 23:59:59',
+							'factor' => 1.25
+						)
+					),
+					'price_type' => 1
+				),
+				'room_type' => array(
+					'room_capacity' => array(
+						'main_capacity' => array(
+							'room_capacity_type' => 'Adults',
+							'price_factor' => 1.0),
+						'additional_capacity' => array(
+							array(
+								'room_capacity_type' => 'Kids under 13',
+								'price_factor' => 0.75
+							)
+						)
+					)
+				)
+			)
+		)
+	);
+
+*/
+/* Return
+Array
+(
+    [0] => Array
+        (
+            [amount] => 1999.98 - TAKE - DONE
+            [room] => Array
+                (
+                    [room_name] => 102 - TAKE
+                    [price_plan] => Array
+                        (
+                            [base_amount] => 999.99
+                            [price_plan_items] => Array
+                                (
+                                    [0] => Array
+                                        (
+                                            [day_of_week] => -1
+                                            [start_date] => 2018-12-13 00:00:00
+                                            [end_date] => 2019-01-13 23:59:59
+                                            [factor] => 1.25
+                                        )
+
+                                )
+
+                            [price_type] => 1
+                        )
+
+                    [room_type] => Array
+                        (
+                            [room_capacity] => Array
+                                (
+                                    [main_capacity] => Array
+                                        (
+                                            [room_capacity_type] => Adults
+                                            [price_factor] => 1
+                                        )
+
+                                    [additional_capacity] => Array
+                                        (
+                                            [0] => Array
+                                                (
+                                                    [room_capacity_type] => Kids under 13
+                                                    [price_factor] => 0.75
+                                                )
+
+                                        )
+
+                                )
+
+                        )
+
+                )
+
+            [capacity_item] => Array
+                (
+                    [room_capacity_type] => Adults - TAKE
+                    [price_factor] => 1 - TAKE
+                    [max] => 2 - TAKE
+                )
+
+            [start_date] => 1540850400 - TAKE - DONE
+            [end_date] => 1540936800 - TAKE - DONE 
+            [times] => 2 - TAKE - DONE
+        )
+
+    [1] => Array
+        (
+            [amount] => 1499.985
+            [room] => Array
+                (
+                    [room_name] => 102
+                    [price_plan] => Array
+                        (
+                            [base_amount] => 999.99
+                            [price_plan_items] => Array
+                                (
+                                    [0] => Array
+                                        (
+                                            [day_of_week] => -1
+                                            [start_date] => 2018-12-13 00:00:00
+                                            [end_date] => 2019-01-13 23:59:59
+                                            [factor] => 1.25
+                                        )
+
+                                )
+
+                            [price_type] => 1
+                        )
+
+                    [room_type] => Array
+                        (
+                            [room_capacity] => Array
+                                (
+                                    [main_capacity] => Array
+                                        (
+                                            [room_capacity_type] => Adults
+                                            [price_factor] => 1
+                                        )
+
+                                    [additional_capacity] => Array
+                                        (
+                                            [0] => Array
+                                                (
+                                                    [room_capacity_type] => Kids under 13
+                                                    [price_factor] => 0.75
+                                                )
+
+                                        )
+
+                                )
+
+                        )
+
+                )
+
+            [capacity_item] => Array
+                (
+                    [room_capacity_type] => Kids under 13
+                    [price_factor] => 0.75
+                    [max] => 2
+                )
+
+            [start_date] => 1540850400
+            [end_date] => 1540936800
+            [times] => 2
+        )
+
+)
+*/

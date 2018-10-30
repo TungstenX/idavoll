@@ -72,8 +72,8 @@ class Idavoll_Admin {
 	 *
 	 * @since    1.0.0
 	 */
-	public function enqueue_scripts() {
-		if ( 'settings_page_idavoll' == get_current_screen() -> id ) {
+	public function enqueue_scripts() {		
+		if ('settings_page_idavoll' == get_current_screen() -> id) {
             wp_enqueue_media();   
             wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/idavoll-admin.js', array( 'jquery', 'wp-color-picker' ), $this->version, false );         
         }
@@ -94,8 +94,9 @@ class Idavoll_Admin {
 	     *        Administration Menus: http://codex.wordpress.org/Administration_Menus
 	     *
 	     */
-	    add_options_page( 'Idavoll Booking Setup', 'Idavoll Booking Setup', 'manage_options', $this->plugin_name, array($this, 'display_plugin_setup_page')
-	    );
+	    add_options_page( 'Idavoll Booking Setup', 'Idavoll Booking Setup', 'manage_options', $this->plugin_name, array($this, 'display_plugin_setup_page'));
+	    add_menu_page( 'Idavoll Booking System', 'Booking', 'manage_options', $this->plugin_name . '/booking', array($this, 'booking_page'), 'dashicons-calendar-alt', 3 );
+
 	}
 
 	 /**
@@ -121,6 +122,10 @@ class Idavoll_Admin {
 	 */
 	public function display_plugin_setup_page() {
 	    include_once( 'partials/idavoll-admin-display.php' );
+	}
+
+	public function booking_page() {
+		include_once( 'partials/idavoll-admin-booking.php' );
 	}
 
 	public function options_update() {
@@ -152,14 +157,18 @@ class Idavoll_Admin {
 		return $valid;
 	}
 
+
+    public function percentageToFactor($percentage) {
+    	return (float)$percentage / 100.00;
+    }
+
 	public function cap_in_admin_action() {
-    	// Do your stuff here
     	$_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-    	$idavol_input  = $_POST['idavoll-capacity'];
-    	$is_main_capacity = $idavol_input['main_capacity'] == 'on' ? true : false;
-		$capacity_type = $idavol_input['capacity_type'];
-		$max = $idavol_input['capacity_max'];
-		$price_factor = $idavol_input['capacity_factor'];
+    	$idavoll_input  = $_POST['idavoll-capacity'];
+    	$is_main_capacity = $idavoll_input['main_capacity'] == 'on' ? true : false;
+		$capacity_type = $idavoll_input['capacity_type'];
+		$max = $idavoll_input['capacity_max'];
+		$price_factor = $this->percentageToFactor($idavoll_input['capacity_factor']);
 		require_once plugin_dir_path( __FILE__ ) . '../includes/class-idavoll-db-func.php';
     	$db_func = new Idavoll_DB_Func();
     	$db_func->storeCapacityItem($is_main_capacity, $capacity_type, $max, $price_factor);
@@ -169,16 +178,114 @@ class Idavoll_Admin {
 	}
 
 	public function price_plan_in_admin_action() {
-    	// Do your stuff here
     	$_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-    	$idavol_input  = $_POST['idavoll-price-plan'];
-    	$price_type = $idavol_input['price_type'];
-		$base_amount = $idavol_input['base_amount'];
-		$single_factor = $idavol_input['single_factor'];
+    	$idavoll_input  = $_POST['idavoll-price-plan'];
+    	// error_log("price_plan_in_admin_action: " . print_r($idavoll_input, 1) , 0);
+    	$price_type = $idavoll_input['price_type'];
+		$base_amount = $idavoll_input['base_amount'];
+		$single_factor = $this->percentageToFactor($idavoll_input['single_factor']);
+		$price_items = $idavoll_input['price_item'];
 		require_once plugin_dir_path( __FILE__ ) . '../includes/class-idavoll-db-func.php';
     	$db_func = new Idavoll_DB_Func();
-    	$db_func->storePricePlan($base_amount, $single_factor, $price_type);
+    	$last_id = $db_func->storePricePlan($base_amount, $single_factor, $price_type);
+    	$db_func->storePricePlanPlanItem($last_id, $price_items);
     	wp_redirect( $_SERVER['HTTP_REFERER'] );
     	exit();
+	}
+
+	public function price_plan_item_in_admin_action() {
+    	$_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+    	$idavoll_input  = $_POST['idavoll-price-plan-item'];
+    	$item_name = $idavoll_input['item_name'];
+		$factor = $this->percentageToFactor($idavoll_input['factor']);
+		$day_of_week = $idavoll_input['day_of_week'];
+		$start_date = $idavoll_input['start_date'];
+		$end_date = $idavoll_input['end_date'];
+		require_once plugin_dir_path( __FILE__ ) . '../includes/class-idavoll-db-func.php';
+    	$db_func = new Idavoll_DB_Func();
+    	$db_func->storePricePlanItem($item_name, $factor, $day_of_week, $start_date, $end_date);
+    	wp_redirect( $_SERVER['HTTP_REFERER'] );
+    	exit();
+	}
+
+	public function room_type_in_admin_action() {
+    	$_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+    	$idavoll_input  = $_POST['idavoll-room-type'];
+		// error_log("room_type_in_admin_action: " . print_r($idavoll_input, 1) , 0);
+    	$type_name = $idavoll_input['type_name'];
+		$id_room_capacity_item = $idavoll_input['main_capacity_item'];
+		$add_caps = $idavoll_input['add_cap'];
+
+		require_once plugin_dir_path( __FILE__ ) . '../includes/class-idavoll-db-func.php';
+    	$db_func = new Idavoll_DB_Func();
+    	$last_id = $db_func->storeRoomType($type_name, $id_room_capacity_item);
+		$db_func->storeCapacityAdditional($last_id, $add_caps);
+
+    	wp_redirect( $_SERVER['HTTP_REFERER'] );
+    	exit();
+	}
+
+	public function room_in_admin_action() {
+    	$_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+    	$idavoll_input  = $_POST['idavoll-room'];
+		// error_log("room_type_in_admin_action: " . print_r($idavoll_input, 1) , 0);
+    	$room_name = $idavoll_input['room_name'];
+    	$room_description = $idavoll_input['room_description'];
+		$id_room_type = $idavoll_input['room_type'];
+		$id_price_plan = $idavoll_input['price_plan'];
+
+		require_once plugin_dir_path( __FILE__ ) . '../includes/class-idavoll-db-func.php';
+    	$db_func = new Idavoll_DB_Func();
+    	$db_func->storeRoom($room_name, $room_description, $id_room_type, null, $id_price_plan);
+
+    	wp_redirect( $_SERVER['HTTP_REFERER'] );
+    	exit();
+	}
+
+	public function book_room_in_admin_action() {
+    	$_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+    	$idavoll_input  = $_POST['idavoll-book'];
+		// error_log("room_type_in_admin_action: " . print_r($idavoll_input, 1) , 0);
+    	$id_room = $idavoll_input['room'];
+    	$id_main_capacity = $idavoll_input['main_capacity_id'];
+    	$main_capacity_number = $idavoll_input['main_capacity'];
+    	$add_cap_ids = $idavoll_input['add_capacity_id'];
+    	$add_cap_number = $idavoll_input['add_capacity_id'];
+    	$from = $idavoll_input['from'];
+    	$to = $idavoll_input['to'];
+    	$contact_name = $idavoll_input['contact_name'];
+    	$contact_telephone = $idavoll_input['contact_telephone'];
+    	$contact_email = $idavoll_input['contact_email'];
+		$deposit = (!isset($idavoll_input['deposit']) || empty($idavoll_input['deposit'])) ? 0 : $idavoll_input['deposit'];
+		//TODO error checking!
+		require_once plugin_dir_path( __FILE__ ) . '../includes/class-idavoll-db-func.php';
+    	$db_func = new Idavoll_DB_Func();
+    	$db_func->storeBook($id_room, $id_main_capacity, $main_capacity_number, $add_cap_ids, $add_cap_number, $from, $to, $contact_name, $contact_telephone, $contact_email ,$deposit);
+    	wp_redirect( $_SERVER['HTTP_REFERER'] );
+    	exit();
+	}
+
+	public function capacity_for_room_admin_action() {
+		$input_ids  = filter_input(INPUT_POST, 'room_id', FILTER_SANITIZE_STRING);
+		$room_type_ids = explode("|", $input_ids);
+		if(is_null($room_type_ids) || count($room_type_ids) != 2) {
+			//Empty list
+			$ret = array();
+	    	$ret_str = json_encode($ret);
+			ob_clean();
+			echo $ret_str;
+			wp_die(); 	
+		}
+		//TODO Error handling!
+		require_once plugin_dir_path( __FILE__ ) . '../includes/class-idavoll-db-func.php';
+		$db_func = new Idavoll_DB_Func();
+		$room_type = $db_func->getRoomType($room_type_ids[1]);
+    	$main_cap = $db_func->getCapacityItem($room_type->id_room_capacity_item);
+    	$add_caps = $db_func->getCapacityItemByRoomTypes($room_type_ids[1]);
+    	$ret = array($main_cap, $add_caps);
+    	$ret_str = json_encode($ret);
+		ob_clean();
+		echo $ret_str;
+		wp_die(); 
 	}
 }
