@@ -173,7 +173,8 @@ class Idavoll {
         $this->loader->add_action( 'admin_action_room_type_in', $plugin_admin, 'room_type_in_admin_action' );
         $this->loader->add_action( 'admin_action_room_in', $plugin_admin, 'room_in_admin_action' );
         $this->loader->add_action( 'admin_action_book_room_in', $plugin_admin, 'book_room_in_admin_action' );
-        $this->loader->add_action( 'wp_ajax_capacity_for_room', $plugin_admin, 'capacity_for_room_admin_action' );
+        //$this->loader->add_action( 'wp_ajax_capacity_for_room', $plugin_admin, 'capacity_for_room_admin_action' );
+        $this->loader->add_action( 'wp_ajax_rooms_available', $plugin_admin, 'rooms_available_admin_action' );
 	}
 
 	/**

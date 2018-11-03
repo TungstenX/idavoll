@@ -221,7 +221,8 @@ $booking = array(
 							'factor' => 1.25
 						)
 					),
-					'price_type' => 1
+					'price_type' => 1,
+					'single_factor' => 1.25
 				),
 				'room_type' => array(
 					'room_capacity' => array(

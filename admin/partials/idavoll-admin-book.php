@@ -17,6 +17,82 @@
     		<tr>    			
         		<td colspan="2"><h3 class="nav-tab-wrapper"><?php _e('Book a room', $this->plugin_name); ?></h3></td>
         	</tr>
+        	<tr>    			
+        		<!-- Start date -->
+        		<td><span><?php esc_attr_e('Start date: ', $this->plugin_name); ?></span></td>
+        		<td>
+			        <fieldset>
+			            <legend class="screen-reader-text"><span><?php _e('Start date: ', $this->plugin_name); ?></span></legend>
+			            <label for="<?php echo $this->plugin_name; ?>-room-start_date">			                
+			                <input type="date" value="<?php if($selected_start_date) {echo $selected_start_date;} ?>" id="<?php echo $this->plugin_name; ?>-room-start_date" name="<?php echo $this->plugin_name; ?>-room[start_date]" />
+			            </label>
+			        </fieldset>
+			    </td>
+			</tr>
+			<tr>    			
+        		<!-- End date -->
+        		<td><span><?php esc_attr_e('End date: ', $this->plugin_name); ?></span></td>
+        		<td>
+			        <fieldset>
+			            <legend class="screen-reader-text"><span><?php _e('End date: ', $this->plugin_name); ?></span></legend>
+			            <label for="<?php echo $this->plugin_name; ?>-room-end_date">			                
+			                <input type="date" value="<?php if($selected_end_date) {echo $selected_end_date;} ?>" id="<?php echo $this->plugin_name; ?>-room-end_date" name="<?php echo $this->plugin_name; ?>-room[end_date]" />
+			            </label>
+			        </fieldset>
+			    </td>
+			</tr>
+
+			<?php
+			$capacity_types = $db_func->getAllCapacityItems();
+			if(is_null($capacity_types) || count($capacity_types) == 0) {
+			?>
+				<tr><td colspan="2" style="color: red;">ERROR: None</td></tr>
+			<?php
+			} else {
+				foreach ($capacity_types as $key => $capacity_type) {
+			?>
+			<tr>
+				<td><?php echo $capacity_type->capacity_type; if ($capacity_type->main_capacity) {echo "(Main)"; } ?></td>
+				<td>
+					<input type="number" step="1" min="<?php if ($capacity_type->main_capacity) {echo '1'; } else { echo '0';} ?>" id="<?php echo $this->plugin_name; ?>-room-cap_item_<?php echo $key; ?>" name="<?php echo $this->plugin_name; ?>-room-cap-item[<?php echo $key; ?>]" />
+					<input type="hidden" id="<?php echo $this->plugin_name; ?>-room-cap_item_id_<?php echo $key; ?>" name="<?php echo $this->plugin_name; ?>-room-cap-item-id[<?php echo $key; ?>]" value="<?php echo $capacity_type->id; ?>" />
+				</td>
+			</tr>
+			<?php
+				}
+			}
+			?>
+			<tr>
+				<td colspan="2">
+					<button id="<?php echo $this->plugin_name; ?>-book-check"><?php _e('Check availability', $this->plugin_name); ?></button>
+					<script type="text/javascript" >
+			            	jQuery(document).on("click", ".<?php echo $this->plugin_name; ?>-book-room", function(e) {
+			            		e.preventDefault();
+			            		var cap_items = $( "input[name=<?php echo $this->plugin_end; ?>-room-cap-item]" ).val();
+			            		var cap_items_id = $( "input[name=<?php echo $this->plugin_end; ?>-room-cap-item-id]" ).val();			
+			            		console.log("cap_items");
+			            		console.log(cap_items);
+			            		console.log(cap_items_id);
+								var data = {
+									'action': 'rooms_available',
+									'start_date': $( "<?php echo $this->plugin_name; ?>-room-start_date" ).val(),
+									'end_date': $( "<?php echo $this->plugin_end; ?>-room-start_date" ).val(),
+									'cap_items': cap_items,									
+									'cap_items_id': cap_items_id
+								};
+								jQuery.post(ajaxurl, data, function(response) {	
+									alert('Got this from the server: ' + response);
+									var myObj = JSON.parse(response);
+									if(myObj && myObj[0]) {
+									}
+								});
+								return false;
+							});
+					</script>
+				</td>
+			</tr>
+
+
     		<tr>    			
         		<!-- Room -->
         		<td><span><?php esc_attr_e('Room: ', $this->plugin_name); ?></span></td>

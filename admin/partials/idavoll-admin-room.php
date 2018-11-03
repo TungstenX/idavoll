@@ -6,8 +6,6 @@
 *	- Remove price plan item from price plan after it is saved
 */
 ?>
-	<p>Description blah</p>
-
 	<!-- Price plan items -->
 	<?php 
     	require_once plugin_dir_path( __FILE__ ) . '../../includes/class-idavoll-db-func.php';
@@ -19,11 +17,12 @@
 		$selected_capacity_item = 0;
 	?>
 	<h2 class="nav-tab-wrapper"><?php _e('Room types', $this->plugin_name); ?></h2>
+	<p><?php _e('Room type are the collection to which a room can belong, e.g. Ground floor rooms', $this->plugin_name);?></p>
 	<form method="post" name="booking_room_type" action="<?php echo admin_url( 'admin.php' ); ?>">
 		<input type="hidden" name="action" value="room_type_in" />
 		<table>
     		<tr>    			
-        		<td colspan="2"><h3 class="nav-tab-wrapper"><?php _e('New / Edit', $this->plugin_name); ?></h3></td>
+        		<td colspan="2"><?php _e('New / Edit', $this->plugin_name); ?></td>
         	</tr>
         	<tr>    			
         		<!-- name -->
@@ -35,6 +34,11 @@
 			                <input type="text" value="<?php if($selected_room_type) {echo $selected_room_type;} ?>" id="<?php echo $this->plugin_name; ?>-room-type-type_name" name="<?php echo $this->plugin_name; ?>-room-type[type_name]" />
 			            </label>
 			        </fieldset>
+			    </td>
+			    <td>
+			    	<p class="help">
+			    		<?php _e("Descriptive name for this room type such as &quot;Casa with sea view&quot;.", $this->plugin_name); ?>
+			    	</p>
 			    </td>
 			</tr>
         	<tr>    			
@@ -61,6 +65,11 @@
 			            	</select>
 			            </label>
 			        </fieldset>
+			    </td>
+			    <td>
+			    	<p class="help">
+			    		<?php _e("The main capacity for this room type", $this->plugin_name); ?>
+			    	</p>
 			    </td>
 			</tr>
 			<tr>    			
@@ -107,7 +116,29 @@
         			<ul id="tmp_add_cap_item_list">
         			</ul>
 			    </td>
-			</tr>    		
+			    <td>
+			    	<p class="help">
+			    		<?php _e("Additional capacity for this room type", $this->plugin_name); ?>
+			    	</p>
+			    </td>
+			</tr>   
+			<tr>    			
+        		<!-- Weitgh -->
+        		<td><span><?php esc_attr_e('Weight: ', $this->plugin_name); ?></span></td>
+        		<td>
+			        <fieldset>
+			            <legend class="screen-reader-text"><span><?php _e('Weight: ', $this->plugin_name); ?></span></legend>
+			            <label for="<?php echo $this->plugin_name; ?>-room-type-weight">			                
+			                <input type="number" step="1" min="0" max="99" value="<?php if($selected_room_type_weight) {echo $selected_room_type_weight;} else {echo '0'; }?>" id="<?php echo $this->plugin_name; ?>-room-type-weight" name="<?php echo $this->plugin_name; ?>-room-type[weight]" />
+			            </label>
+			        </fieldset>
+			    </td>
+			    <td>
+			    	<p class="help">
+			    		<?php _e("The weight is used when booking &quot;Any&quot;. Leave all on 0 for no weighting.  The higher the number the more frequently this will be used.", $this->plugin_name); ?>
+			    	</p>
+			    </td>
+			</tr> 		
 			<tr>
 				<td colspan="2"><?php submit_button(__('Save all changes', $this->plugin_name), 'primary','submit', TRUE); ?></td>
 			</tr>
@@ -176,23 +207,30 @@
 		$selected_id_price_plan = 0;
 	?>
 	<h2 class="nav-tab-wrapper"><?php _e('Rooms', $this->plugin_name); ?></h2>
-	<h3 class="nav-tab-wrapper"><?php _e('New / Edit', $this->plugin_name); ?></h3>
+	<p><?php _e('The room the can be rented out.', $this->plugin_name);?></p>
 	<form method="post" name="booking_room" action="<?php echo admin_url( 'admin.php' ); ?>">
 		<input type="hidden" name="action" value="room_in" />
 		<table>
     		<tr>    			
-        		<td colspan="2"><h3 class="nav-tab-wrapper"><?php _e('Rooms', $this->plugin_name); ?></h3></td>
+        		<tr>    			
+        		<td colspan="2"><?php _e('New / Edit', $this->plugin_name); ?></td>
         	</tr>
+        	</tr>        	
         	<tr>    			
         		<!-- Room name -->
-        		<td><span><?php esc_attr_e('Room name: ', $this->plugin_name); ?></span></td>
+        		<td><span><?php esc_attr_e('Room name / number: ', $this->plugin_name); ?></span></td>
         		<td>
 			        <fieldset>
-			            <legend class="screen-reader-text"><span><?php _e('Room name: ', $this->plugin_name); ?></span></legend>
+			            <legend class="screen-reader-text"><span><?php _e('Room name / number: ', $this->plugin_name); ?></span></legend>
 			            <label for="<?php echo $this->plugin_name; ?>-room-room_name">			                
 			                <input type="text" value="<?php if($selected_room_name) {echo $selected_room_name;} ?>" id="<?php echo $this->plugin_name; ?>-room-room_name" name="<?php echo $this->plugin_name; ?>-room[room_name]" />
 			            </label>
 			        </fieldset>
+			    </td>
+			    <td>
+			    	<p class="help">
+			    		<?php _e("The room name or number, e.g. &quot;Honeymoon Suite&quot; or &quot;201&quot;", $this->plugin_name); ?>
+			    	</p>
 			    </td>
 			</tr>
         	<tr>    			

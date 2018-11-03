@@ -246,7 +246,8 @@ class Idavoll_Admin {
     	$_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
     	$idavoll_input  = $_POST['idavoll-book'];
 		// error_log("room_type_in_admin_action: " . print_r($idavoll_input, 1) , 0);
-    	$id_room = $idavoll_input['room'];
+		$room = explode("|", $idavoll_input['room']);
+    	$id_room = $room[0];
     	$id_main_capacity = $idavoll_input['main_capacity_id'];
     	$main_capacity_number = $idavoll_input['main_capacity'];
     	$add_cap_ids = $idavoll_input['add_capacity_id'];
@@ -265,7 +266,18 @@ class Idavoll_Admin {
     	exit();
 	}
 
-	public function capacity_for_room_admin_action() {
+	public function rooms_available_admin_action() {
+		//For demo
+		error_log("[DEBUG] rooms_available_admin_action: " . print_r($_POST, 1) , 0);
+		require_once plugin_dir_path( __FILE__ ) . '../includes/class-idavoll-db-func.php';
+		$db_func = new Idavoll_DB_Func();
+		$rooms = $db_func->getAllRooms();
+		$ret_str = json_encode($rooms);
+		ob_clean();
+		echo $ret_str;
+		wp_die(); 
+
+		//Need to do this for real
 		$input_ids  = filter_input(INPUT_POST, 'room_id', FILTER_SANITIZE_STRING);
 		$room_type_ids = explode("|", $input_ids);
 		if(is_null($room_type_ids) || count($room_type_ids) != 2) {

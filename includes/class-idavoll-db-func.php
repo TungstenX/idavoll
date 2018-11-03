@@ -194,7 +194,7 @@ class Idavoll_DB_Func {
 	public function getAllCapacityItems() {
 		global $wpdb;
 		$table_name_capacity = $wpdb->prefix . "ihs_capacity_item"; 
-		$rows = $wpdb->get_results( "SELECT id, main_capacity, capacity_type, max, price_factor FROM " . $table_name_capacity . " ORDER BY main_capacity");
+		$rows = $wpdb->get_results( "SELECT id, main_capacity, capacity_type, max, price_factor FROM " . $table_name_capacity . " ORDER BY main_capacity DESC");
 		return $rows;
 	}
 
@@ -395,6 +395,7 @@ class Idavoll_DB_Func {
 		global $wpdb;
 		$user_id = get_current_user_id();		
 		$room = $this->getRoom($id_room);
+		// error_log("storeBook: " . print_r($room, 1), 0);
 		$price_plan = $this->getPricePlan($room->id_price_plan);
 		$table_name_booking = $wpdb->prefix . "ihs_booking";
 		$rows = $wpdb->insert( $table_name_booking, 
@@ -432,12 +433,12 @@ class Idavoll_DB_Func {
 	   			'room_capacity_type' => $add_cap->capacity_type,
 				'price_factor' => $add_cap->price_factor,
 				'max' => $add_cap_number[$key]
-			)
+			);
 			$room_cap_add = array(
 	   			'room_capacity_type' => $add_cap->capacity_type,
 				'price_factor' => $add_cap->price_factor,
 				'max' => $add_cap->max
-			)
+			);
 			array_push($caps, $cap_add);
 			array_push($room_caps['additional_capacity'], $room_cap_add);
 		}
@@ -466,7 +467,8 @@ class Idavoll_DB_Func {
    					'price_plan' => array(
    						'base_amount' => $price_plan->base_amount,
    						'price_plan_items' => $price_plan_item_array,
-   						'price_type' => $price_plan->price_type
+   						'price_type' => $price_plan->price_type,
+   						'single_factor' => $price_plan->single_factor
    					),
    					'room_type' => array(
    						'room_capacity' => $room_caps
@@ -531,7 +533,8 @@ $booking = array(
 							'factor' => 1.25
 						)
 					),
-					'price_type' => 1
+					'price_type' => 1,
+					'single_factor' => 1.25
 				),
 				'room_type' => array(
 					'room_capacity' => array(
