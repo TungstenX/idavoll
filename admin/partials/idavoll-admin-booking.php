@@ -22,8 +22,8 @@
 	<?php
 	function page_tabs($current = 'book') {
 	    $tabs = array(
-	        'book'   => __('Book', 'idavoll'), 
-	        'bookings'  => __('Bookings', 'idavoll')
+	        'bookings'  => __('Bookings', 'idavoll'),
+	        'book'   => __('Book', 'idavoll'),
 	    );
 	    $html = '<h2 class="nav-tab-wrapper">';
 	    foreach( $tabs as $tab => $name ){
@@ -34,14 +34,14 @@
 	    echo $html;
 	}
             
-    $tab = ( ! empty( $_GET['tab'] ) ) ? esc_attr( $_GET['tab'] ) : 'book';
+    $tab = ( ! empty( $_GET['tab'] ) ) ? esc_attr( $_GET['tab'] ) : 'bookings';
 	page_tabs( $tab );
     
     if ($tab == 'book') { 
-    	// Options
+    	// Book
 	    require_once plugin_dir_path( __FILE__ ) . 'idavoll-admin-book.php';   
 	} else if ($tab == 'bookings') {
-		// Capacity
+		// bookings
 	    require_once plugin_dir_path( __FILE__ ) . 'idavoll-admin-booking-list.php';
 	}
     ?>

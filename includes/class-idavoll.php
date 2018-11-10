@@ -175,6 +175,7 @@ class Idavoll {
         $this->loader->add_action( 'admin_action_book_room_in', $plugin_admin, 'book_room_in_admin_action' );
         //$this->loader->add_action( 'wp_ajax_capacity_for_room', $plugin_admin, 'capacity_for_room_admin_action' );
         $this->loader->add_action( 'wp_ajax_rooms_available', $plugin_admin, 'rooms_available_admin_action' );
+        $this->loader->add_action( 'wp_ajax_rooms_from_room_type', $plugin_admin, 'rooms_from_room_type_admin_action' );
 	}
 
 	/**
@@ -193,7 +194,8 @@ class Idavoll {
 		//Actions
         // $this->loader->add_action( 'init', $plugin_public, 'wp_cbf_cleanup' );
         $this->loader->add_action('wp_loaded', $plugin_public, 'idavoll_styles' );
-        add_action('widgets_init', 'idavoll_booking_load_widget');
+        $this->loader->add_shortcode('book_room', 'book_room' );
+        $this->loader->add_action('widgets_init', $plugin_public, 'idavoll_booking_load_widget');
         // $this->loader->add_action( 'wp_loaded', $plugin_public, 'wp_cbf_remove_gallery_styles' );
         // $this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'wp_cbf_cdn_jquery', PHP_INT_MAX);
 

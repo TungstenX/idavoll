@@ -7,15 +7,13 @@
 		$selected_capacity_type = "";
 		$selected_max = "";
 		$selected_price_factor = 1.0;
-	?>
-	<p>Description blah</p>
+	?>	
+	<h2 class="nav-tab-wrapper"><?php _e('Capacity Items', $this->plugin_name); ?></h2>
+	<p>This is to set up capacity items / classes to be used as part of the configuration of room types.</p>
 	<h3 class="nav-tab-wrapper"><?php _e('New / Edit', $this->plugin_name); ?></h3>
 	<form method="post" name="booking_capacity" action="<?php echo admin_url( 'admin.php' ); ?>">
 		<input type="hidden" name="action" value="cap_in" />
 		<table>
-    		<tr>    			
-        		<td colspan="2"><h3 class="nav-tab-wrapper"><?php _e('Capacity Items', $this->plugin_name); ?></h3></td>
-        	</tr>
     		<tr>    			
         		<!-- Is Main capacity -->
         		<td><span><?php esc_attr_e('Is main capacity: ', $this->plugin_name); ?></span></td>
@@ -65,13 +63,13 @@
 			    </td>
 			</tr>
 			<tr>
-				<td colspan="2"><?php submit_button(__('Save all changes', $this->plugin_name), 'primary','submit', TRUE); ?></td>
+				<td colspan="2"><?php submit_button(__('Save capacity item', $this->plugin_name), 'primary','submit', TRUE); ?></td>
 			</tr>
 		</table>
 	</form>
 
 	<!-- List of: -->
-	<h3 class="nav-tab-wrapper"><?php _e('Capacities', $this->plugin_name); ?></h3>
+	<h2 class="nav-tab-wrapper"><?php _e('Capacity items', $this->plugin_name); ?></h2>
 	<table border="1">
 	<?php 
 	if(is_null($rows) || count($rows) == 0) {
@@ -92,7 +90,7 @@
 		?>
 		<tr>
 			<td><?php echo $row->capacity_type; ?></td>
-			<td><?php echo $row->main_capacity; ?></td>
+			<td><?php echo $row->main_capacity == 1 ? "Yes" : ""; ?></td>
 			<td><?php echo $row->max; ?></td>
 			<td><?php echo factorToPercentage($row->price_factor); ?> %</td>
 			<td><button><?php echo $row->id; ?></button></td>

@@ -50,6 +50,7 @@ class Idavoll_Loader {
 
 		$this->actions = array();
 		$this->filters = array();
+		$this->shortcodes = array();
 
 	}
 
@@ -67,18 +68,31 @@ class Idavoll_Loader {
 		$this->actions = $this->add( $this->actions, $hook, $component, $callback, $priority, $accepted_args );
 	}
 
+
+	/**
+	 * Add a new action to the collection to be registered with WordPress.
+	 *
+	 * @since    1.0.0
+	 * @param    string               $hook 			The short code name.
+	 * @param    object               $component        A reference to the instance of the object on which the action is defined.
+	 * @param    string               $callback         The name of the function definition on the $component.
+	 * @param    int                  $priority         Optional. The priority at which the function should be fired. Default is 10.
+	 * @param    int                  $accepted_args    Optional. The number of arguments that should be passed to the $callback. 
+	 */
+	public function add_shortcode( $hook, $component, $callback, $priority = 10, $accepted_args = 1 ) {
+		$this->shortcodes = $this->add( $this->shortcodes, $hook, $component, $callback, $priority, $accepted_args );
+	}
+
 	/**
 	 * Add a new filter to the collection to be registered with WordPress.
 	 *
 	 * @since    1.0.0
 	 * @param    string               $hook             The name of the WordPress filter that is being registered.
 	 * @param    object               $component        A reference to the instance of the object on which the filter is defined.
-	 * @param    string               $callback         The name of the function definition on the $component.
-	 * @param    int                  $priority         Optional. The priority at which the function should be fired. Default is 10.
-	 * @param    int                  $accepted_args    Optional. The number of arguments that should be passed to the $callback. Default is 1
+	 * @param    string               $callback         The name of the function definition on the $component.Default is 1
 	 */
-	public function add_filter( $hook, $component, $callback, $priority = 10, $accepted_args = 1 ) {
-		$this->filters = $this->add( $this->filters, $hook, $component, $callback, $priority, $accepted_args );
+	public function add_filter( $hook, $component, $callback) {
+		$this->filters = $this->add( $this->filters, $hook, $component, $callback, 10, 1 );
 	}
 
 	/**
@@ -122,6 +136,9 @@ class Idavoll_Loader {
 
 		foreach ( $this->actions as $hook ) {
 			add_action( $hook['hook'], array( $hook['component'], $hook['callback'] ), $hook['priority'], $hook['accepted_args'] );
+		}
+		foreach ( $this->shortcodes as $hook ) {
+			add_shortcode( $hook['hook'], array( $hook['component'], $hook['callback'] ));
 		}
 
 	}

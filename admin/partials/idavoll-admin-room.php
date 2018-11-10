@@ -244,6 +244,11 @@
 			            </label>
 			        </fieldset>
 			    </td>
+			    <td>
+			    	<p class="help">
+			    		<?php _e("Description of the room", $this->plugin_name); ?>
+			    	</p>
+			    </td>
 			</tr>
 
         	<tr>    			
@@ -269,6 +274,11 @@
 			            	</select>
 			            </label>
 			        </fieldset>
+			    </td>			    
+			    <td>
+			    	<p class="help">
+			    		<?php _e("The room type of this room", $this->plugin_name); ?>
+			    	</p>
 			    </td>
 			</tr>
     		<tr>    			
@@ -299,9 +309,30 @@
 			            	</select>
 			            </label>
 			        </fieldset>
+			    </td>			    
+			    <td>
+			    	<p class="help">
+			    		<?php _e("The price plans for this room", $this->plugin_name); ?>
+			    	</p>
 			    </td>
 			</tr>
-			
+			<tr>    			
+        		<!-- Weitgh -->
+        		<td><span><?php esc_attr_e('Weight: ', $this->plugin_name); ?></span></td>
+        		<td>
+			        <fieldset>
+			            <legend class="screen-reader-text"><span><?php _e('Weight: ', $this->plugin_name); ?></span></legend>
+			            <label for="<?php echo $this->plugin_name; ?>-room-weight">			                
+			                <input type="number" step="1" min="0" max="99" value="<?php if($selected_room_weight) {echo $selected_room_weight;} else {echo '0'; }?>" id="<?php echo $this->plugin_name; ?>-room-weight" name="<?php echo $this->plugin_name; ?>-room[weight]" />
+			            </label>
+			        </fieldset>
+			    </td>
+			    <td>
+			    	<p class="help">
+			    		<?php _e("The weight is used when booking &quot;Any&quot;. Leave all on 0 for no weighting.  The higher the number the more frequently this will be used.", $this->plugin_name); ?>
+			    	</p>
+			    </td>
+			</tr> 		
 			<tr>
 				<td colspan="2"><?php submit_button(__('Save all changes', $this->plugin_name), 'primary','submit', TRUE); ?></td>
 			</tr>
@@ -331,7 +362,7 @@
 			$pp = $db_func->getPricePlan($row->id_price_plan);
 		?>
 		<tr>
-			<td><?php echo $row->room_name?></td>
+			<td><?php echo $row->room_name; ?></td>
 			<td><?php echo $row->room_description; ?></td>
 			<td><?php 
 				if(!is_null($rt)) {

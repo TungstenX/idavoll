@@ -115,7 +115,11 @@ class Idavoll_Public {
     }
 
     public function idavoll_booking_load_widget() {
-		// register_widget( 'idavoll_booking_widget' );
+		register_widget( 'idavoll_booking_widget' );
+	}
+
+	public function book_room($atts) {
+		return "<pre>" . print_r($atts, 1) . "</pre>";
 	}
 
 }

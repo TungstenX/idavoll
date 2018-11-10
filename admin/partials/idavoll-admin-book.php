@@ -2,41 +2,38 @@
     	require_once plugin_dir_path( __FILE__ ) . '../../includes/class-idavoll-db-func.php';
     	$db_func = new Idavoll_DB_Func();
 		$rows = $db_func->getAllRooms();
-		$caprows = $db_func->getAllRooms();
+		$room_type_rows = $db_func->getAllRoomTypes();
 		// echo "<pre>" . print_r($rows, 1) . "</pre>";
 		$selected_room = -1;
 		$selected_capacity_type = "";
 		$selected_max = "";
 		$selected_price_factor = 1.0;
 	?>
-	<p>Description blah</p>
-	<h3 class="nav-tab-wrapper"><?php _e('Book a room', $this->plugin_name); ?></h3>
+	<h2 class="nav-tab-wrapper"><?php _e('Book a room', $this->plugin_name); ?></h2>	
+	<p>Book a room for a customer</p>
 	<form method="post" name="book" action="<?php echo admin_url( 'admin.php' ); ?>">
 		<input type="hidden" name="action" value="book_room_in" />
 		<table>
-    		<tr>    			
-        		<td colspan="2"><h3 class="nav-tab-wrapper"><?php _e('Book a room', $this->plugin_name); ?></h3></td>
-        	</tr>
         	<tr>    			
-        		<!-- Start date -->
-        		<td><span><?php esc_attr_e('Start date: ', $this->plugin_name); ?></span></td>
+        		<!-- From -->
+        		<td><span><?php esc_attr_e('From: ', $this->plugin_name); ?></span></td>
         		<td>
 			        <fieldset>
-			            <legend class="screen-reader-text"><span><?php _e('Start date: ', $this->plugin_name); ?></span></legend>
-			            <label for="<?php echo $this->plugin_name; ?>-room-start_date">			                
-			                <input type="date" value="<?php if($selected_start_date) {echo $selected_start_date;} ?>" id="<?php echo $this->plugin_name; ?>-room-start_date" name="<?php echo $this->plugin_name; ?>-room[start_date]" />
+			            <legend class="screen-reader-text"><span><?php _e('From: ', $this->plugin_name); ?></span></legend>
+			            <label for="<?php echo $this->plugin_name; ?>-book-from">			                
+			                <input type="date" value='<?php if(!empty($selected_from)) {echo $selected_from;} ?>' id="<?php echo $this->plugin_name; ?>-book-from" name="<?php echo $this->plugin_name; ?>-book[from]" required />
 			            </label>
 			        </fieldset>
 			    </td>
 			</tr>
 			<tr>    			
-        		<!-- End date -->
-        		<td><span><?php esc_attr_e('End date: ', $this->plugin_name); ?></span></td>
+        		<!-- To -->
+        		<td><span><?php esc_attr_e('To: ', $this->plugin_name); ?></span></td>
         		<td>
 			        <fieldset>
-			            <legend class="screen-reader-text"><span><?php _e('End date: ', $this->plugin_name); ?></span></legend>
-			            <label for="<?php echo $this->plugin_name; ?>-room-end_date">			                
-			                <input type="date" value="<?php if($selected_end_date) {echo $selected_end_date;} ?>" id="<?php echo $this->plugin_name; ?>-room-end_date" name="<?php echo $this->plugin_name; ?>-room[end_date]" />
+			            <legend class="screen-reader-text"><span><?php _e('To: ', $this->plugin_name); ?></span></legend>
+			            <label for="<?php echo $this->plugin_name; ?>-book-to">			                
+			                <input type="date" value='<?php if(!empty($selected_to)) {echo $selected_to;} ?>' id="<?php echo $this->plugin_name; ?>-book-to" name="<?php echo $this->plugin_name; ?>-book[to]" required />
 			            </label>
 			        </fieldset>
 			    </td>
@@ -54,29 +51,29 @@
 			<tr>
 				<td><?php echo $capacity_type->capacity_type; if ($capacity_type->main_capacity) {echo "(Main)"; } ?></td>
 				<td>
-					<input type="number" step="1" min="<?php if ($capacity_type->main_capacity) {echo '1'; } else { echo '0';} ?>" id="<?php echo $this->plugin_name; ?>-room-cap_item_<?php echo $key; ?>" name="<?php echo $this->plugin_name; ?>-room-cap-item[<?php echo $key; ?>]" />
-					<input type="hidden" id="<?php echo $this->plugin_name; ?>-room-cap_item_id_<?php echo $key; ?>" name="<?php echo $this->plugin_name; ?>-room-cap-item-id[<?php echo $key; ?>]" value="<?php echo $capacity_type->id; ?>" />
+					<input type="number" step="1" min="<?php if ($capacity_type->main_capacity) {echo '1'; } else { echo '0';} ?>" id="<?php echo $this->plugin_name; ?>-book-cap_item_<?php echo $key; ?>" name="<?php echo $this->plugin_name; ?>-book[cap-item][<?php echo $key; ?>]"  <?php if ($capacity_type->main_capacity) {echo 'required'; } ?> />
+					<input type="hidden" id="<?php echo $this->plugin_name; ?>-book-cap_item_id_<?php echo $key; ?>" name="<?php echo $this->plugin_name; ?>-book[cap-item-id][<?php echo $key; ?>]" value="<?php echo $capacity_type->id; ?>" />
 				</td>
 			</tr>
 			<?php
 				}
 			}
 			?>
-			<tr>
+			<tr style="display: none;">
 				<td colspan="2">
-					<button id="<?php echo $this->plugin_name; ?>-book-check"><?php _e('Check availability', $this->plugin_name); ?></button>
+					<button disabled="disabled" id="<?php echo $this->plugin_name; ?>-book-check"><?php _e('Check availability', $this->plugin_name); ?></button>
 					<script type="text/javascript" >
-			            	jQuery(document).on("click", ".<?php echo $this->plugin_name; ?>-book-room", function(e) {
+			            	jQuery(document).on("click", ".<?php echo $this->plugin_name; ?>-book-check", function(e) {
 			            		e.preventDefault();
-			            		var cap_items = $( "input[name=<?php echo $this->plugin_end; ?>-room-cap-item]" ).val();
-			            		var cap_items_id = $( "input[name=<?php echo $this->plugin_end; ?>-room-cap-item-id]" ).val();			
+			            		var cap_items = $( "input[name=<?php echo $this->plugin_end; ?>-book-cap-item]" ).val();
+			            		var cap_items_id = $( "input[name=<?php echo $this->plugin_end; ?>-book-cap-item-id]" ).val();			
 			            		console.log("cap_items");
 			            		console.log(cap_items);
 			            		console.log(cap_items_id);
 								var data = {
 									'action': 'rooms_available',
-									'start_date': $( "<?php echo $this->plugin_name; ?>-room-start_date" ).val(),
-									'end_date': $( "<?php echo $this->plugin_end; ?>-room-start_date" ).val(),
+									'start_date': $( "<?php echo $this->plugin_name; ?>-book-from" ).val(),
+									'end_date': $( "<?php echo $this->plugin_end; ?>-book-to" ).val(),
 									'cap_items': cap_items,									
 									'cap_items_id': cap_items_id
 								};
@@ -92,6 +89,85 @@
 				</td>
 			</tr>
 
+			<tr>    			
+        		<!-- Room type -->
+        		<td><span><?php esc_attr_e('Room type: ', $this->plugin_name); ?></span></td>
+        		<td>
+			        <fieldset>
+			            <legend class="screen-reader-text"><span><?php _e('Room type: ', $this->plugin_name); ?></span></legend>
+			            <label for="<?php echo $this->plugin_name; ?>-book-room_type">			                
+			                <select id="<?php echo $this->plugin_name; ?>-book-room_type" class="<?php echo $this->plugin_name; ?>-book-room_type" name="<?php echo $this->plugin_name; ?>-book[room_type]" >
+			                	<option value="-1">Any</option>
+			            		<?php 
+			            		if (!is_null($room_type_rows) && (count($room_type_rows) > 0)) {
+				            		foreach ($room_type_rows as $key => $value) {			            			
+				            			echo "<option value=\"{$value->id}\" ";
+				            			if($selected_room_type == $value->id) { 
+				            				echo "selected "; 
+				            			}
+				            			echo ">";
+										echo __($value->type_name, $this->plugin_name); 
+										echo "</option>";
+				            		}
+			            		}
+			            		?>
+			            	</select>
+			            	<script type="text/javascript" >
+			            	jQuery( ".<?php echo $this->plugin_name; ?>-book-room_type" ).change(function() {
+			            		var cap_items = [];
+			            		var cap_item_ids = [];
+			            		<?php
+			            		foreach ($capacity_types as $key => $value) {
+			            			echo "\t\tcap_items.push(document.getElementById( \"{$this->plugin_name}-book-cap_item_{$key}\" ).value);\n";
+			            			echo "\t\tcap_item_ids.push(document.getElementById( \"{$this->plugin_name}-book-cap_item_id_{$key}\" ).value);\n";
+			            		}
+			            		?>
+			            		var start_date = document.getElementById( "<?php echo $this->plugin_name; ?>-book-from" ).value; 
+			            		var end_date = document.getElementById( "<?php echo $this->plugin_name; ?>-book-to" ).value; 
+								var data = {
+									'action': 'rooms_from_room_type',
+									'data': {'room_type_id': this.value,
+									'start_date': start_date,
+									'end_date': end_date,
+									'cap_items': cap_items,
+									'cap_item_ids': cap_item_ids}
+								};
+								jQuery.post(ajaxurl, data, function(response) {	
+									// alert('Got this from the server: ' + response);
+									var myObj = JSON.parse(response);
+									if(myObj) {
+										//when ok remove items
+										var selectId = "<?php echo $this->plugin_name; ?>-book-room";
+										var select = document.getElementById(selectId);
+										while(select.hasChildNodes()) {
+											select.removeChild(select.childNodes[0]);  
+										}
+										//Add any entry
+										var anyOption = document.createElement("OPTION"); 
+										anyOption.setAttribute("value", "-1");
+										var anyLabel = document.createTextNode("<?php _e('Any', $this->plugin_end); ?>"); 
+										anyOption.appendChild(anyLabel);
+										select.appendChild(anyOption);
+
+										//add entries
+										for (i = 0; i < myObj.length; i++) {
+											var option = document.createElement("OPTION"); 
+											option.setAttribute("value", myObj[i].id);
+											var label = document.createTextNode(myObj[i].room_name); 
+											option.appendChild(label);
+											select.appendChild(option);
+										}
+									} else {
+										//error
+										alert("Error!");
+									}
+								});
+							});
+						</script>
+			            </label>			            
+			        </fieldset>
+			    </td>
+			</tr>
 
     		<tr>    			
         		<!-- Room -->
@@ -101,120 +177,9 @@
 			            <legend class="screen-reader-text"><span><?php _e('Room: ', $this->plugin_name); ?></span></legend>
 			            <label for="<?php echo $this->plugin_name; ?>-book-room">			                
 			                <select id="<?php echo $this->plugin_name; ?>-book-room" class="<?php echo $this->plugin_name; ?>-book-room" name="<?php echo $this->plugin_name; ?>-book[room]" >
-			                	<option value="-1">Please select</option>
-			            		<?php 
-			            		if (!is_null($rows) && (count($rows) > 0)) {
-				            		foreach ($rows as $key => $value) {			            			
-				            			echo "<option value=\"{$value->id}|{$value->id_room_type}\" ";
-				            			if($selected_room == $value->id) { 
-				            				echo "selected "; 
-				            			}
-				            			echo ">";
-										echo __($value->room_name, $this->plugin_name); 
-										echo "</option>";
-				            		}
-			            		}
-			            		?>
+			                	<option value="-1">Any</option>
 			            	</select>
-			            </label>
-			            <script type="text/javascript" >
-			            	jQuery( ".<?php echo $this->plugin_name; ?>-book-room" ).change(function() {
-								var data = {
-									'action': 'capacity_for_room',
-									'room_id': this.value
-								};
-								jQuery.post(ajaxurl, data, function(response) {	
-									// alert('Got this from the server: ' + response);
-									var myObj = JSON.parse(response);
-									if(myObj && myObj[0]) {
-										//when ok remove items
-										var table = document.getElementById("<?php echo $this->plugin_name; ?>-capacity-table");
-										while(table.hasChildNodes()) {
-											table.removeChild(table.childNodes[0]);  
-										}
-										//add entries
-										var tr = document.createElement("TR"); 
-										var tdL = document.createElement("TD"); 
-										var tdR = document.createElement("TD"); 
-										var label = document.createTextNode(myObj[0].capacity_type); 
-										tdL.appendChild(label);
-										
-										var input = document.createElement("INPUT"); 
-										input.setAttribute("name", "<?php echo $this->plugin_name; ?>-book[main_capacity]");
-										input.setAttribute("id", "<?php echo $this->plugin_name; ?>-book-main_capacity");
-										input.setAttribute("type", "number");
-										input.setAttribute("step", "1");
-										input.setAttribute("min", "1");
-										input.setAttribute("max", myObj[0].max);
-
-										var inputH = document.createElement("INPUT"); 
-										inputH.setAttribute("name", "<?php echo $this->plugin_name; ?>-book[main_capacity_id]");
-										inputH.setAttribute("id", "<?php echo $this->plugin_name; ?>-book-main_capacity_id");
-										inputH.setAttribute("type", "hidden");
-										inputH.setAttribute("value", myObj[0].id);
-
-										tdR.appendChild(input);
-										tdR.appendChild(inputH);
-										tr.appendChild(tdL);
-										tr.appendChild(tdR);
-										table.appendChild(tr);
-										if(myObj[1] && (myObj[1].length > 0)) {
-											for (i = 0; i < myObj[1].length; i++) {
-    											var trA = document.createElement("TR"); 
-												var tdLA = document.createElement("TD"); 
-												var tdRA = document.createElement("TD"); 
-												var labelA = document.createTextNode(myObj[1][i].capacity_type); 
-												tdLA.appendChild(labelA);
-												var inputA = document.createElement("INPUT"); 
-												inputA.setAttribute("name", "<?php echo $this->plugin_name; ?>-book[add_capacity][" + i + "]");
-												inputA.setAttribute("id", "<?php echo $this->plugin_name; ?>-book-add_capacity_" + i);
-												inputA.setAttribute("type", "number");
-												inputA.setAttribute("step", "1");
-												inputA.setAttribute("min", "0");
-												inputA.setAttribute("max", myObj[1][i].max);
-												tdRA.appendChild(inputA);
-
-												var inputH = document.createElement("INPUT"); 
-												inputH.setAttribute("name", "<?php echo $this->plugin_name; ?>-book[add_capacity_id][" + i + "]");
-												inputH.setAttribute("id", "<?php echo $this->plugin_name; ?>-book-add_capacity_" + i);
-												inputH.setAttribute("type", "hidden");
-												inputH.setAttribute("value", myObj[1][i].id);
-												trA.appendChild(tdLA);
-												trA.appendChild(tdRA);
-												table.appendChild(trA);
-											}
-										}
-									} else {
-										//error
-										alert("Error!");
-									}
-								});
-							});
-						</script>
-			        </fieldset>
-			    </td>
-			</tr>
-			<tr>    			
-        		<!-- From -->
-        		<td><span><?php esc_attr_e('From: ', $this->plugin_name); ?></span></td>
-        		<td>
-			        <fieldset>
-			            <legend class="screen-reader-text"><span><?php _e('From: ', $this->plugin_name); ?></span></legend>
-			            <label for="<?php echo $this->plugin_name; ?>-book-from">			                
-			                <input type="date" value='<?php if(!empty($selected_from)) {echo $selected_from;} ?>' id="<?php echo $this->plugin_name; ?>-book-from" name="<?php echo $this->plugin_name; ?>-book[from]" />
-			            </label>
-			        </fieldset>
-			    </td>
-			</tr>
-			<tr>    			
-        		<!-- To -->
-        		<td><span><?php esc_attr_e('To: ', $this->plugin_name); ?></span></td>
-        		<td>
-			        <fieldset>
-			            <legend class="screen-reader-text"><span><?php _e('To: ', $this->plugin_name); ?></span></legend>
-			            <label for="<?php echo $this->plugin_name; ?>-book-to">			                
-			                <input type="date" value='<?php if(!empty($selected_to)) {echo $selected_to;} ?>' id="<?php echo $this->plugin_name; ?>-book-to" name="<?php echo $this->plugin_name; ?>-book[to]" />
-			            </label>
+			            </label>			            
 			        </fieldset>
 			    </td>
 			</tr>
@@ -225,7 +190,7 @@
 			        <fieldset>
 			            <legend class="screen-reader-text"><span><?php _e('Contact name: ', $this->plugin_name); ?></span></legend>
 			            <label for="<?php echo $this->plugin_name; ?>-book-contact_name">			                
-			                <input type="text" value='<?php if(!empty($selected_contact_name)) {echo $selected_contact_name;} ?>' id="<?php echo $this->plugin_name; ?>-book-contact_name" name="<?php echo $this->plugin_name; ?>-book[contact_name]" />
+			                <input type="text" value='<?php if(!empty($selected_contact_name)) {echo $selected_contact_name;} ?>' id="<?php echo $this->plugin_name; ?>-book-contact_name" name="<?php echo $this->plugin_name; ?>-book[contact_name]" required />
 			            </label>
 			        </fieldset>
 			    </td>
@@ -266,15 +231,7 @@
 			        </fieldset>
 			    </td>
 			</tr>			
-			<tr>    			
-        		<!-- Capacity -->
-        		<td><span><?php esc_attr_e('Capacity: ', $this->plugin_name); ?></span></td>
-        		<td>
-			        <table id="<?php echo $this->plugin_name; ?>-capacity-table">
-			        	
-			        </table>
-			    </td>
-			</tr>
+			
 			<tr>
 				<td colspan="2"><?php submit_button(__('Submit booking', $this->plugin_name), 'primary','submit', TRUE); ?></td>
 			</tr>

@@ -62,9 +62,10 @@ class Idavoll_Admin {
 	public function enqueue_styles() {
 		if ( 'settings_page_idavoll' == get_current_screen() -> id ) {
              // CSS stylesheet for colour Picker
-             wp_enqueue_style( 'wp-color-picker' );            
-             wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/idavoll-admin.css', array( 'wp-color-picker' ), $this->version, 'all' );
+             wp_enqueue_style( 'wp-color-picker' ); 
          }
+
+        wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/idavoll-admin.css', array( 'wp-color-picker' ), $this->version, 'all' );
 	}
 
 	/**
@@ -215,10 +216,11 @@ class Idavoll_Admin {
     	$type_name = $idavoll_input['type_name'];
 		$id_room_capacity_item = $idavoll_input['main_capacity_item'];
 		$add_caps = $idavoll_input['add_cap'];
+		$weight = $idavoll_input['weight'];
 
 		require_once plugin_dir_path( __FILE__ ) . '../includes/class-idavoll-db-func.php';
     	$db_func = new Idavoll_DB_Func();
-    	$last_id = $db_func->storeRoomType($type_name, $id_room_capacity_item);
+    	$last_id = $db_func->storeRoomType($type_name, $id_room_capacity_item, $weight);
 		$db_func->storeCapacityAdditional($last_id, $add_caps);
 
     	wp_redirect( $_SERVER['HTTP_REFERER'] );
@@ -233,10 +235,11 @@ class Idavoll_Admin {
     	$room_description = $idavoll_input['room_description'];
 		$id_room_type = $idavoll_input['room_type'];
 		$id_price_plan = $idavoll_input['price_plan'];
+		$weight = $idavoll_input['weight'];
 
 		require_once plugin_dir_path( __FILE__ ) . '../includes/class-idavoll-db-func.php';
     	$db_func = new Idavoll_DB_Func();
-    	$db_func->storeRoom($room_name, $room_description, $id_room_type, null, $id_price_plan);
+    	$db_func->storeRoom($room_name, $room_description, $id_room_type, null, $id_price_plan, $weight);
 
     	wp_redirect( $_SERVER['HTTP_REFERER'] );
     	exit();
@@ -245,13 +248,66 @@ class Idavoll_Admin {
 	public function book_room_in_admin_action() {
     	$_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
     	$idavoll_input  = $_POST['idavoll-book'];
-		// error_log("room_type_in_admin_action: " . print_r($idavoll_input, 1) , 0);
-		$room = explode("|", $idavoll_input['room']);
-    	$id_room = $room[0];
-    	$id_main_capacity = $idavoll_input['main_capacity_id'];
-    	$main_capacity_number = $idavoll_input['main_capacity'];
-    	$add_cap_ids = $idavoll_input['add_capacity_id'];
-    	$add_cap_number = $idavoll_input['add_capacity_id'];
+		error_log("\n[DEBUG] book_room_in_admin_action: " . print_r($idavoll_input, 1) . "\n\n", 0);		
+    	$id_room_type = $idavoll_input['room_type'];
+    	$id_room = $idavoll_input['room'];
+    	$rooms = $this->getRoomsAvailable($id_room_type, $idavoll_input['from'],$idavoll_input['to']);
+    	if(!isset($rooms) || (count($rooms) == 0)) {
+    		//TODO report error
+    		wp_redirect( $_SERVER['HTTP_REFERER'] );
+    		exit();
+    	}
+    	if($id_room <= 0) {
+    		if($id_room_type <= 0) {
+    			$id_room = $rooms[0]->id;
+    		} else {
+    			//Find a room in the list that has the same room_type_id
+    			$found = false;
+    			foreach ($rooms as $key => $value) {
+    				if($value->id_room_type == $id_room_type) {
+		    			$found = true;
+		    			$id_room = $value->id;
+		    			break; // out of loop
+		    		}
+    			}
+    			if(!$found) {
+					//TODO report error
+					wp_redirect( $_SERVER['HTTP_REFERER'] );
+					exit();		
+		    	}
+    		}
+    	} else {
+    		//Check if room is in this list
+    		$found = false;
+	    	foreach ($rooms as $key => $value) {
+	    		if($value->id == $id_room) {
+	    			$found = true;
+	    			break; // out of loop
+	    		}
+	    	}
+	    	if(!$found) {
+				//TODO report error
+				wp_redirect( $_SERVER['HTTP_REFERER'] );
+				exit();		
+	    	}
+	    }
+    	if(!$idavoll_input['cap-item-id'] || (count($idavoll_input['cap-item-id']) < 1)) {
+    		//TODO report error
+    		wp_redirect( $_SERVER['HTTP_REFERER'] );
+    		exit();
+    	}
+    	$id_main_capacity = $idavoll_input['cap-item-id'][0];
+    	$main_capacity_number = $idavoll_input['cap-item'][0];
+    	$add_cap_ids = array();
+    	$add_cap_number = array();
+    	if(count($idavoll_input['cap-item-id']) > 1) {
+    		for($i = 1; $i < count($idavoll_input['cap-item-id']); $i++) {
+    			if($idavoll_input['cap-item'][$i] && !empty($idavoll_input['cap-item'][$i]) && (count(intval($idavoll_input['cap-item'][$i])) > 0)) {
+    				array_push($add_cap_ids, $idavoll_input['cap-item-id'][$i]);
+    				array_push($add_cap_number, $idavoll_input['cap-item'][$i]);
+    			}
+    		}
+    	}
     	$from = $idavoll_input['from'];
     	$to = $idavoll_input['to'];
     	$contact_name = $idavoll_input['contact_name'];
@@ -268,7 +324,7 @@ class Idavoll_Admin {
 
 	public function rooms_available_admin_action() {
 		//For demo
-		error_log("[DEBUG] rooms_available_admin_action: " . print_r($_POST, 1) , 0);
+		//error_log("[DEBUG] rooms_available_admin_action: " . print_r($_POST, 1) , 0);
 		require_once plugin_dir_path( __FILE__ ) . '../includes/class-idavoll-db-func.php';
 		$db_func = new Idavoll_DB_Func();
 		$rooms = $db_func->getAllRooms();
@@ -299,5 +355,31 @@ class Idavoll_Admin {
 		ob_clean();
 		echo $ret_str;
 		wp_die(); 
+	}
+
+	/**
+	* Get rooms from room type and check availablity
+	*/
+	public function rooms_from_room_type_admin_action() {
+		//For demo
+		//error_log("[DEBUG] rooms_available_admin_action: " . print_r($_POST, 1) , 0);
+		$_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+		$data = $_POST['data'];
+		$rooms = $this->getRoomsAvailable($data['room_type_id'], $data['start_date'], $data['end_date']);
+		$ret_str = json_encode($rooms);
+		ob_clean();
+		echo $ret_str;
+		wp_die(); 
+	}
+
+	/**
+	* TODO Do the actual check, including capacity
+	*/
+	private function getRoomsAvailable($id_room_type, $start_date, $end_date) {
+		//TODO handle $id_room_type = -1
+		require_once plugin_dir_path( __FILE__ ) . '../includes/class-idavoll-db-func.php';
+		$db_func = new Idavoll_DB_Func();
+		$rooms = $db_func->getRoomsAvailable($id_room_type, $start_date, $end_date);
+		return $rooms;
 	}
 }

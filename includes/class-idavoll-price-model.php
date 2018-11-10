@@ -79,7 +79,12 @@ class Idavoll_Price_Model {
 			$caps = $booking['number_of_ppl_per_room'][$room['room_name']];
 			foreach ($caps as $key => $value) {
 				$room_cap_factor = $this->getRoomCapFactor($value, $room);
-				$single_factor = $this->isMainCapacity($value, $room) ? ($value['max'] === 1 ? $room['price_plan']['single_factor'] : 1.0) : 1.0;
+				// $msgOut = "\n\n" 
+				// . "\tthis->isMainCapacity($value, $room) = " . $this->isMainCapacity($value, $room) ."\n"
+				// . "\t$value['max']"
+
+				// error_log("getPricePlanEntryFactor: " . print_r($price_plan_items, 1) , 0);
+				$single_factor = $this->isMainCapacity($value, $room) ? ($value['max'] == 1 ? $room['price_plan']['single_factor'] : 1.0) : 1.0;
 				$temp_amount = $amount * $ppe_factor * $room_cap_factor * $single_factor * $value['max'];
 				$value['price_factor'] = $room_cap_factor;
 				$price_item = &$this->findPriceItem($ret, $room, $temp_amount, $date, $value);
@@ -99,16 +104,26 @@ class Idavoll_Price_Model {
 	*/
 	private function getPricePlanEntryFactor($price_plan_items, $date) {
 		$factor = 1.0;
-		// error_log("getPricePlanEntryFactor: " . print_r($price_plan_items, 1) , 0);
 		
+		// $msg = "\n\ngetPricePlanEntryFactor:\n";
 		foreach ($price_plan_items as $key => $value) {
 			$day_of_week = intVal(date("N", $date));			
+			// $msg .= "\tday_of_week = " . $day_of_week . "\n";
+			// $msg .= "\tdate = " . $date . "\n";
+			// $msg .= "\tvalue['start_date'] = " . strtotime($value['start_date']) . "\n";
+			// $msg .= "\tvalue['end_date'] = " . strtotime($value['end_date']) . "\n";
+			// $msg .= "\tNot null check = " . (!is_null($value['start_date']) && !is_null($value['end_date'])) . "\n";
+			// $msg .= "\t(date >= value['start_date']) = " . ($date >= strtotime($value['start_date'])) . "\n";
+			// $msg .= "\t(date <= value['end_date']) = " . ($date <= strtotime($value['end_date'])) . "\n";
 			if (($value['day_of_week'] == $day_of_week) 
 				|| ((!is_null($value['start_date']) && !is_null($value['end_date']))
-					&& (($date >= $value['start_date']) && ($date <= $value['end_date'])))) {
-				$factor += $value['factor'];
+					&& (($date >= strtotime($value['start_date'])) && ($date <= strtotime($value['end_date']))))) {
+				$factor += (floatval($value['factor']) - 1.0);
+				// $msg .= "\t\tfactor = " . $factor . "\n";
 			}
 		}
+
+		// error_log($msg , 0);
 		return $factor;
 	}
 
@@ -125,7 +140,7 @@ class Idavoll_Price_Model {
 	*/
 	private function &findPriceItem(&$ret, $room, $amount, $date, $capacity_item = NULL) {
 		foreach ($ret as $key => $value) {
-			if (($value['room']['room_name'] === $room['room_name']) && ($value['amount'] === $amount)) {
+			if (($value['room']['room_name'] == $room['room_name']) && ($value['amount'] == $amount)) {
 				$value['end_date'] = $date;
 				return $value;
 			}
@@ -144,7 +159,7 @@ class Idavoll_Price_Model {
 
 	private function updatePriceItem(&$ret, $room, $amount, $price_item) {
 		foreach ($ret as $key => $value) {
-			if (($value['room']['room_name'] === $room['room_name']) && ($value['amount'] === $amount)) {
+			if (($value['room']['room_name'] == $room['room_name']) && ($value['amount'] == $amount)) {
 				$ret[$key] = $price_item;
 				return;
 			}
@@ -166,7 +181,7 @@ class Idavoll_Price_Model {
 	*/
 	private function getRoomCapFactor($capacity_item, $room) {
 		foreach ($room['room_type']['room_capacity']['additional_capacity'] as $key => $value) {
-			if($value['room_capacity_type'] === $capacity_item['room_capacity_type']) {				
+			if($value['room_capacity_type'] == $capacity_item['room_capacity_type']) {				
 				return $value['price_factor'];
 			}
 		}
@@ -186,25 +201,25 @@ class Idavoll_Price_Model {
 	*			- additional_capacity ass array of capacity_item
 	*/
 	private function isMainCapacity($capacity_item, $room) {
-		return $capacity_item['room_capacity_type'] === $room['room_type']['room_capacity']['main_capacity']['room_capacity_type'];
+		return $capacity_item['room_capacity_type'] == $room['room_type']['room_capacity']['main_capacity']['room_capacity_type'];
 	}
 }
 /* For testing */
 /*$model = new Idavoll_Price_Model();
 $booking = array(
-		'start_date' => '2018-10-30 00:00:00', 
-		'end_date' => '2018-11-01 23:59:59', 
+		'start_date' => '2018-12-13 00:00:00', 
+		'end_date' => '2018-12-14 23:59:59', 
 		'number_of_ppl_per_room' => array(
 			'102' => array(
 				array(
 					'room_capacity_type' => 'Adults',
 					'price_factor' => 1.0,
-					'max' => 1
+					'max' => 2
 				),
 				array(
 					'room_capacity_type' => 'Kids under 13',
 					'price_factor' => 0.75,
-					'max' => 1
+					'max' => 0
 				) 
 			)
 		),
@@ -212,17 +227,17 @@ $booking = array(
 			array(
 				'room_name' => '102', 
 				'price_plan' => array(
-					'base_amount' => 999.99,
+					'base_amount' => 500,
 					'price_plan_items' => array(
 						array(
 							'day_of_week' => -1,
 							'start_date' => '2018-12-13 00:00:00',
-							'end_date' => '2019-01-13 23:59:59',
-							'factor' => 1.25
+							'end_date' => '2019-01-08 23:59:59',
+							'factor' => 1.30
 						)
 					),
 					'price_type' => 1,
-					'single_factor' => 1.25
+					'single_factor' => 1.50
 				),
 				'room_type' => array(
 					'room_capacity' => array(
@@ -232,7 +247,7 @@ $booking = array(
 						'additional_capacity' => array(
 							array(
 								'room_capacity_type' => 'Kids under 13',
-								'price_factor' => 0.75
+								'price_factor' => 0.50
 							)
 						)
 					)

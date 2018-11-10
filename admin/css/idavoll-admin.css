@@ -2,3 +2,59 @@
  * All of the CSS for your admin-specific functionality should be
  * included in this file.
  */
+
+.bookings {
+ 	width: 100%;
+ 	border-collapse: collapse;
+ }
+
+ .booking td, .booking th {
+ 	border: 1px solid #ddd !important;
+    padding: 8px !important;
+ }
+
+.booking th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    font-weight: bold;
+}
+
+.bookings_items {
+ 	width: 100%;
+ 	border-collapse: collapse;
+ 	border-spacing: 0px;
+ 	background: none;
+ 	display: none;
+ 	color: #061539 !important;
+ }
+
+  .bookings_items td {
+ 	border: 1px solid #ddd !important;
+    padding: 8px !important;
+ }
+
+
+.booking_row_1 {
+ 	background: #162955;
+ 	color: #7887AB !important;
+ }
+
+.booking_row_item_1 { 	
+ 	background: #2E4172;
+ 	color: #061539 !important;
+ }
+
+.booking_row_0 {
+ 	background: #4F628E;
+ 	color: #061539 !important;
+ }
+
+.booking_row_item_0 { 	
+ 	background: #7887AB;
+ 	color: #061539 !important;
+ }
+
+ .item_right {
+ 	text-align: right;
+ }

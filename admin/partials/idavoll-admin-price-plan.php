@@ -6,7 +6,6 @@
 *	- Remove price plan item from price plan after it is saved
 */
 ?>
-	<p>Description blah</p>
 
 	<!-- Price plan items -->
 	<?php 
@@ -20,13 +19,12 @@
 		$selected_start_end = "";		
 		$selected_factor = 100.00;
 	?>
-	<h2 class="nav-tab-wrapper"><?php _e('Price Plan Items', $this->plugin_name); ?></h2>
+	<h2 class="nav-tab-wrapper"><?php _e('Price Plan Items', $this->plugin_name); ?></h2>	
+	<p>Price plans are created for peak season times.</p>
+	<h3 class="nav-tab-wrapper"><?php _e('New / Edit', $this->plugin_name); ?>
 	<form method="post" name="booking_price_plan_item" action="<?php echo admin_url( 'admin.php' ); ?>">
 		<input type="hidden" name="action" value="price_plan_item_in" />
 		<table>
-    		<tr>    			
-        		<td colspan="2"><h3 class="nav-tab-wrapper"><?php _e('New / Edit', $this->plugin_name); ?></h3></td>
-        	</tr>
         	<tr>    			
         		<!-- name -->
         		<td><span><?php esc_attr_e('Name: ', $this->plugin_name); ?></span></td>
@@ -103,13 +101,13 @@
 			    </td>
 			</tr>
 			<tr>
-				<td colspan="2"><?php submit_button(__('Save all changes', $this->plugin_name), 'primary','submit', TRUE); ?></td>
+				<td colspan="2"><?php submit_button(__('Save price plan item', $this->plugin_name), 'primary','submit', TRUE); ?></td>
 			</tr>
 		</table>
 	</form>
 
 	<!-- List of: -->
-	<h3 class="nav-tab-wrapper"><?php _e('Price plan items', $this->plugin_name); ?></h3>
+	<h2 class="nav-tab-wrapper"><?php _e('Price plan items', $this->plugin_name); ?></h2>
 	<table border="1">
 	<?php 
 
@@ -154,13 +152,11 @@
 		$selected_price_type = 1;
 	?>
 	<h2 class="nav-tab-wrapper"><?php _e('Price Plans', $this->plugin_name); ?></h2>
+	<p>Price plans will be linked to room types</p>
 	<h3 class="nav-tab-wrapper"><?php _e('New / Edit', $this->plugin_name); ?></h3>
 	<form method="post" name="booking_price_plan" action="<?php echo admin_url( 'admin.php' ); ?>">
 		<input type="hidden" name="action" value="price_plan_in" />
 		<table>
-    		<tr>    			
-        		<td colspan="2"><h3 class="nav-tab-wrapper"><?php _e('Price Plans', $this->plugin_name); ?></h3></td>
-        	</tr>
         	<tr>    			
         		<!-- Price type -->
         		<td><span><?php esc_attr_e('Price type: ', $this->plugin_name); ?></span></td>
@@ -247,13 +243,13 @@
 			    </td>
 			</tr>
 			<tr>
-				<td colspan="2"><?php submit_button(__('Save all changes', $this->plugin_name), 'primary','submit', TRUE); ?></td>
+				<td colspan="2"><?php submit_button(__('Save price plan', $this->plugin_name), 'primary','submit', TRUE); ?></td>
 			</tr>
 		</table>
 	</form>
 
 	<!-- List of: -->
-	<h3 class="nav-tab-wrapper"><?php _e('Price plans', $this->plugin_name); ?></h3>
+	<h2 class="nav-tab-wrapper"><?php _e('Price plans', $this->plugin_name); ?></h2>
 	<table border="1">
 	<?php 
 	if(is_null($rows) || count($rows) == 0) {

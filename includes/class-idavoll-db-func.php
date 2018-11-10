@@ -22,7 +22,7 @@
  */
 class Idavoll_DB_Func {
 
-	private static $ihs_db_version = "1.0.5";
+	private static $ihs_db_version = "1.0.7";
 
 	public function db_install () {
 		global $wpdb;
@@ -53,6 +53,9 @@ class Idavoll_DB_Func {
 		$sql = "CREATE TABLE " . $table_name_booking . " (
   			id mediumint(9) NOT NULL AUTO_INCREMENT,
   			id_admin_user bigint(20),
+  			id_changed_by bigint(20),
+  			created_at timestamp,
+  			changed_at timestamp,
   			start_date date DEFAULT '0000-00-00' NOT NULL,
   			end_date date,
   			base_amount double,
@@ -151,7 +154,7 @@ class Idavoll_DB_Func {
 	*/
 	private function makeRoomTables($charset_collate) {
 		global $wpdb;
-		$table_name_room = $wpdb->prefix . "ihs_room"; 
+		$table_name_room = $wpdb->prefix . "ihs_room";
 		$sql = "CREATE TABLE " . $table_name_room . " (
    			id mediumint(9) NOT NULL AUTO_INCREMENT,
    			room_name varchar(255) NOT NULL,
@@ -159,6 +162,8 @@ class Idavoll_DB_Func {
    			id_room_type mediumint(9),
    			id_room_composite mediumint(9),
    			id_price_plan mediumint(9),
+   			weight int(2),
+   			number_of_bookings mediumint(9) DEFAULT 0,
    			PRIMARY KEY  (id)
 		) " . $charset_collate . ";";
 		$this->doTheSql($sql);		
@@ -186,6 +191,8 @@ class Idavoll_DB_Func {
    			id mediumint(9) NOT NULL AUTO_INCREMENT,
    			type_name varchar(255),
    			id_room_capacity_item mediumint(9),
+   			weight int(2),
+   			number_of_bookings mediumint(9),
    			PRIMARY KEY  (id)
 		) " . $charset_collate . ";";
 		$this->doTheSql($sql);		
@@ -276,21 +283,39 @@ class Idavoll_DB_Func {
 		}
 	}
 
+	/******************************************************************************************************************************************/
+	/* Room */
+	/******************************************************************************************************************************************/
 	public function getRoom($id) {
 		global $wpdb;
 		$table_name_room = $wpdb->prefix . "ihs_room";
-		$row = $wpdb->get_row( "SELECT id, room_name, room_description, id_room_type, id_room_composite, id_price_plan FROM " . $table_name_room . " WHERE id=$id");
+		$row = $wpdb->get_row( "SELECT id, room_name, room_description, id_room_type, id_room_composite, id_price_plan, weight, number_of_bookings FROM " . $table_name_room . " WHERE id=$id");
 		return $row;
 	}
 
 	public function getAllRooms() {
 		global $wpdb;
 		$table_name_room = $wpdb->prefix . "ihs_room";
-		$rows = $wpdb->get_results( "SELECT id, room_name, room_description, id_room_type, id_room_composite, id_price_plan FROM " . $table_name_room);
+		$rows = $wpdb->get_results( "SELECT id, room_name, room_description, id_room_type, id_room_composite, id_price_plan, weight, number_of_bookings FROM " . $table_name_room . " ORDER BY weight DESC, number_of_bookings DESC, room_name");
 		return $rows;
 	}
 
-	public function storeRoom($room_name, $room_description, $id_room_type, $id_room_composite, $id_price_plan) {
+	/**
+	* TODO How to handle , $main_capacity, $additional_capacity
+	*/
+	public function getRoomsAvailable($id_room_type, $start_date, $end_date) {
+		global $wpdb;
+		$table_name_room = $wpdb->prefix . "ihs_room";
+		$sql = "SELECT id, room_name, room_description, id_room_type, id_room_composite, id_price_plan, weight, number_of_bookings FROM " . $table_name_room;
+		if($id_room_type > 0) {
+		 $sql .= " WHERE id_room_type=$id_room_type";
+		}
+		$sql .= " ORDER BY weight DESC, number_of_bookings DESC, room_name";
+		$rows = $wpdb->get_results($sql);
+		return $rows;
+	}
+
+	public function storeRoom($room_name, $room_description, $id_room_type, $id_room_composite, $id_price_plan, $weight, $number_of_bookings = 0) {
 		global $wpdb;
 		$table_name_room = $wpdb->prefix . "ihs_room";
 		$rows = $wpdb->insert( $table_name_room, 
@@ -299,10 +324,15 @@ class Idavoll_DB_Func {
 				'room_description' => $room_description,
 				'id_room_type' => $id_room_type,
 				'id_room_composite' => $id_room_composite,
-				'id_price_plan' => $id_price_plan),
+				'id_price_plan' => $id_price_plan,
+				'weight' => $weight,
+				'number_of_bookings' => $number_of_bookings
+			),
 			array(
 				'%s',
 				'%s', 
+				'%d',
+				'%d',
 				'%d',
 				'%d',
 				'%d')
@@ -316,27 +346,44 @@ class Idavoll_DB_Func {
 		global $wpdb;
 		$table_name_price_plan_plan_item = $wpdb->prefix . "ihs_price_plan_plan_item"; 
 		$table_name_price_plan_item = $wpdb->prefix . "ihs_price_plan_item"; 
-		$sql = "SELECT ppi.id as id, ppi.item_name as item_name, ppi.factor as factor, ppi.day_of_week as day_of_week, ppi.start_date as start_date, ppi.end_date as end_date FROM " . $table_name_price_plan_item . " ppi INNER JOIN  " . $table_name_price_plan_plan_item . " pi ON ppi.id = pi.id_price_plan_item WHERE pi.id_price_plan = " . $price_plan_id . " ORDER BY ppi.start_date, ppi.day_of_week";	
+		$sql = "SELECT ppi.id as id, ppi.item_name as item_name, ppi.factor as factor, ppi.day_of_week as day_of_week, ppi.start_date as start_date, ppi.end_date as end_date FROM " . $table_name_price_plan_item . " ppi INNER JOIN  " . $table_name_price_plan_plan_item . " pi ON ppi.id = pi.id_price_plan_item WHERE ppi.id = " . $price_plan_id . " ORDER BY ppi.start_date, ppi.day_of_week";	
+
+		//error_log("[DEBUG] getPricePlanItems: SQL: {$sql}", 0);
 		$rows = $wpdb->get_results($sql);
 		return $rows;	
+	}
+
+	/******************************************************************************************************************************************/
+	/* Room type */
+	/******************************************************************************************************************************************/
+	public function getRoomType($id) {
+		global $wpdb;
+		$table_name_room_type = $wpdb->prefix . "ihs_room_type";
+		$row = $wpdb->get_row( "SELECT id, type_name, id_room_capacity_item, weight, number_of_bookings FROM " . $table_name_room_type . " WHERE id=$id");
+		return $row;
 	}
 
 	public function getAllRoomTypes() {
 		global $wpdb;
 		$table_name_room_type = $wpdb->prefix . "ihs_room_type";
-		$rows = $wpdb->get_results( "SELECT id, type_name, id_room_capacity_item FROM " . $table_name_room_type);
+		$rows = $wpdb->get_results( "SELECT id, type_name, id_room_capacity_item, weight, number_of_bookings FROM " . $table_name_room_type . " ORDER BY weight DESC, number_of_bookings DESC, type_name");
 		return $rows;
 	}
 
-	public function storeRoomType($type_name, $id_room_capacity_item) {
+	public function storeRoomType($type_name, $id_room_capacity_item, $weight, $number_of_bookings = 0) {
 		global $wpdb;
 		$table_name_room_type = $wpdb->prefix . "ihs_room_type";
 		$rows = $wpdb->insert( $table_name_room_type, 
 			array(
 				'type_name' => $type_name, 
-				'id_room_capacity_item' => $id_room_capacity_item),
+				'id_room_capacity_item' => $id_room_capacity_item,
+				'weight' => $weight,
+				'number_of_bookings' => $number_of_bookings
+			),
 			array(
 				'%s', 
+				'%d',
+				'%d',
 				'%d')
 		);
 		$lastid = $wpdb->insert_id;
@@ -377,12 +424,6 @@ class Idavoll_DB_Func {
 		return $rows;	
 	}
 
-	public function getRoomType($id) {
-		global $wpdb;
-		$table_name_room_type = $wpdb->prefix . "ihs_room_type";
-		$row = $wpdb->get_row( "SELECT id, type_name, id_room_capacity_item FROM " . $table_name_room_type . " WHERE id=$id");
-		return $row;
-	}
 
 	public function getPricePlan($id) {
 		global $wpdb;
@@ -395,12 +436,14 @@ class Idavoll_DB_Func {
 		global $wpdb;
 		$user_id = get_current_user_id();		
 		$room = $this->getRoom($id_room);
-		// error_log("storeBook: " . print_r($room, 1), 0);
+		//error_log("[DEBUG] storeBook[1]: room:  " . print_r($room, 1), 0);
 		$price_plan = $this->getPricePlan($room->id_price_plan);
+		//error_log("[DEBUG] storeBook[2]: price_plan:  " . print_r($price_plan, 1), 0);
 		$table_name_booking = $wpdb->prefix . "ihs_booking";
 		$rows = $wpdb->insert( $table_name_booking, 
 			array(
 				'id_admin_user' => $user_id, 
+  				'created_at' => date('Y-m-d H:i:s'),
 				'start_date' => date('Y-m-d', strtotime($from)), 
 				'end_date' => date('Y-m-d', strtotime($to)),
 				'base_amount' => $price_plan->base_amount,
@@ -408,9 +451,13 @@ class Idavoll_DB_Func {
 				'contact_telephone' => $contact_telephone,
 				'contact_email' => $contact_email)
 		);
+		if($wpdb->last_error !== '') {
+    		$wpdb->print_error();
+    		exit();
+    	}
 		$lastid = $wpdb->insert_id;		
    		$main_cap = $this->getCapacityItem($id_main_capacity);	
-
+		//error_log("[DEBUG] storeBook[3]: main_cap:  " . print_r($main_cap, 1), 0);
    		$caps = array(
 			array(
 	   			'room_capacity_type' => $main_cap->capacity_type,
@@ -439,11 +486,15 @@ class Idavoll_DB_Func {
 				'price_factor' => $add_cap->price_factor,
 				'max' => $add_cap->max
 			);
+			//error_log("[DEBUG] storeBook[4.1]: cap_add:  " . print_r($cap_add, 1), 0);
 			array_push($caps, $cap_add);
 			array_push($room_caps['additional_capacity'], $room_cap_add);
 		}
+		//error_log("[DEBUG] storeBook[4]: caps:  " . print_r($caps, 1), 0);
+		//error_log("[DEBUG] storeBook[5]: room_caps:  " . print_r($room_caps, 1), 0);
 
 		$price_plan_items = $this->getPricePlanItems($price_plan->id);
+		//error_log("[DEBUG] storeBook[6]: price_plan_items:  " . print_r($price_plan_items, 1), 0);
 		$price_plan_item_array = array();
 		foreach ($price_plan_items as $key => $value) {
 			$item = array(
@@ -480,25 +531,45 @@ class Idavoll_DB_Func {
    		require_once plugin_dir_path( __FILE__ ) . 'class-idavoll-price-model.php';
    		$price_model = new Idavoll_Price_Model();
    		$price_items = $price_model->makePriceItems($booking);   		
-   			
+   		
+		error_log("[DEBUG] storeBook[7]: price_items:  " . print_r($price_items, 1), 0);	
+		$room_name = "";
 		$table_name_price_item = $wpdb->prefix . "ihs_price_item"; 
    		foreach ($price_items as $key => $value) {
+   			//error_log("[DEBUG] storeBook[8]: value:  " . print_r($value, 1), 0);
+   			$end_date = isset($value['end_date']) ? $value['end_date'] : strtotime($to);
    			$rows = $wpdb->insert( $table_name_price_item, 
    				array(
-   					'amount' => $value->amount, 
-   					'start_date' => date('Y-m-d', $value->start_date), 
-   					'end_date' => date('Y-m-d', $value->end_date),
-   					'times' => $value->times,
+   					'amount' => floatval($value['amount']), 
+   					'start_date' => date('Y-m-d', $value['start_date']), 
+   					'end_date' => date('Y-m-d', $value['end_date']),
+   					'times' => $value['times'],
    					'id_booking' => $lastid,
-   					'room_capacity_type' => $value->capacity_item->room_capacity_type,
-   					'price_factor' => $value->capacity_item->price_factor,
-   					'number_of_ppl' => $value->capacity_item->max,
-   					'room_name' => $value->room->room_name
+   					'room_capacity_type' => $value['capacity_item']['room_capacity_type'],
+   					'price_factor' => $value['capacity_item']['price_factor'],
+   					'number_of_ppl' => $value['capacity_item']['max'],
+   					'room_name' => $value['room']['room_name']
    				)
    			);
+
+   			//Increment booking number for room
+   			if($room_name != $value['room']['room_name']) {
+   				$room_name = $value['room']['room_name'];
+	   			$table_name_room = $wpdb->prefix . "ihs_room";
+	   			$wpdb->query("UPDATE " . $table_name_room . " SET number_of_bookings=number_of_bookings+1 WHERE room_name='" . $value['room']['room_name'] . "'");
+	   		}
    		}
 
 		return $lastid;
+	}
+
+	public function getBookingList() {
+		global $wpdb;
+		$table_name_booking = $wpdb->prefix . "ihs_booking"; 
+		$table_name_price_item = $wpdb->prefix . "ihs_price_item"; 
+		$sql = "SELECT b.id AS id, b.id_admin_user AS id_admin_user, b.start_date AS booking_start_date, b.end_date AS booking_end_date, b.base_amount AS base_amount, b.contact_name AS contact_name, b.contact_telephone AS contact_telephone, b.contact_email AS contact_email, p.id AS item_id, p.amount AS amount, p.start_date AS start_date, p.end_date AS end_date, p.times AS times, p.room_capacity_type AS room_capacity_type, p.price_factor AS price_factor, p.number_of_ppl AS number_of_ppl, p.room_name AS room_name FROM " . $table_name_booking . " b INNER JOIN " . $table_name_price_item . " p ON b.id = p.id_booking ORDER BY b.id DESC, p.start_date";
+		$rows = $wpdb->get_results($sql);
+		return $rows;	
 	}
 }
 /* Input
